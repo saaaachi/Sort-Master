@@ -3,129 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Block Fit Puzzle</title>
+    <title>Block Matcher Deluxe</title>
     <style>
-        body { margin: 0; background: #f0f4f8; font-family: sans-serif; text-align: center; overflow: hidden; }
-        #game-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: #1e293b; font-family: sans-serif; overflow: hidden; color: white; }
         
-        /* 上段：待機ブロック */
-        #top-area { height: 150px; background: #e2e8f0; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        #game-ui { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-around; font-weight: bold; }
         
-        /* 中段：判定・消えるエリア */
-        #mid-area { flex-grow: 1; position: relative; background: #fff; border-top: 4px solid #cbd5e1; border-bottom: 4px solid #cbd5e1; }
-        
-        /* 下段：土台が流れてくるエリア */
-        #bottom-area { height: 150px; background: #334155; display: flex; align-items: center; padding: 0 20px; }
+        /* 上段：次に落ちてくるブロック */
+        #top-queue { height: 100px; margin-top: 40px; display: flex; justify-content: center; align-items: center; gap: 15px; background: rgba(255,255,255,0.05); }
 
-        .block { border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; transition: transform 0.1s; }
-        .size-2 { width: 60px; height: 60px; background: #ef4444; } /* 2個分イメージ */
-        .size-4 { width: 120px; height: 60px; background: #3b82f6; } /* 4個分イメージ */
+        /* 中段：合体エリア */
+        #drop-zone { height: 200px; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 2px solid #475569; }
         
-        #menu { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:100; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; }
-        .stage-btn { padding: 15px 30px; margin: 10px; background: #22c55e; border:none; border-radius:10px; color:white; font-size:18px; cursor:pointer; }
+        /* 下段：待機ブロック（選択用） */
+        #bottom-selection { height: 180px; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; background: #334155; }
+
+        .block { border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; border: 2px solid rgba(255,255,255,0.2); }
+        /* レゴのポッチ風デザイン */
+        .block::before { content: ""; position: absolute; top: -5px; width: 80%; height: 5px; background: inherit; border-radius: 2px 2px 0 0; opacity: 0.8; }
+
+        .hole { border: 3px dashed rgba(255,255,255,0.3) !important; background: transparent !important; }
+        
+        .size-2 { width: 50px; height: 50px; }
+        .size-4 { width: 100px; height: 50px; }
+
+        /* 右下の残り枚数 */
+        #count-display { position: fixed; bottom: 20px; right: 20px; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 20px; }
+
+        #menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .stage-btn { padding: 15px 40px; margin: 10px; background: #3b82f6; border: none; border-radius: 30px; color: white; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <div id="top-area"></div>
-        <div id="mid-area">
-            <div id="score-display" style="position:absolute; top:10px; right:10px;">Score: 0</div>
-            <div id="msg" style="margin-top:50px; font-size:24px; color:#cbd5e1;">ここにブロックを落とす</div>
-        </div>
-        <div id="bottom-area"></div>
+    <div id="game-ui">
+        <span>SCORE: <span id="score">0</span></span>
+        <span>STAGE: <span id="stage-num">1</span></span>
     </div>
 
+    <div id="top-queue"></div>
+    
+    <div id="drop-zone">
+        <div id="active-target"></div>
+    </div>
+
+    <div id="bottom-selection"></div>
+
+    <div id="count-display">残り: <span id="remain-count">0</span></div>
+
     <div id="menu">
-        <h1>Block Fit</h1>
-        <div id="stage-list">
-            <button class="stage-btn" onclick="startStage(1)">Stage 1 (Easy)</button>
-            <button class="stage-btn" onclick="startStage(2)">Stage 2 (Normal)</button>
-            <button class="stage-btn" onclick="startStage(3)">Stage 3 (Hard)</button>
-        </div>
+        <h1 style="color:#facc15">BLOCK MATCHER</h1>
+        <button class="stage-btn" onclick="startStage(1, 10)">Stage 1 (Easy)</button>
+        <button class="stage-btn" onclick="startStage(2, 20)">Stage 2 (Medium)</button>
+        <button class="stage-btn" onclick="startStage(3, 40)">Stage 3 (Hard)</button>
     </div>
 
     <script>
-        let currentStage = 1;
+        const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7'];
+        let stageTotal = 0;
         let score = 0;
-        let topBlocks = [];
-        let baseSlots = [];
+        let topQueue = [];
+        let selectionPool = [];
 
-        function startStage(lv) {
-            currentStage = lv;
+        function startStage(num, total) {
             score = 0;
+            stageTotal = total;
+            document.getElementById('stage-num').innerText = num;
+            document.getElementById('score').innerText = score;
+            document.getElementById('remain-count').innerText = stageTotal;
             document.getElementById('menu').style.display = 'none';
-            document.getElementById('score-display').innerText = "Score: " + score;
             initGame();
         }
 
         function initGame() {
-            const topArea = document.getElementById('top-area');
-            const bottomArea = document.getElementById('bottom-area');
-            topArea.innerHTML = "";
-            bottomArea.innerHTML = "";
+            topQueue = [];
+            selectionPool = [];
+            document.getElementById('top-queue').innerHTML = "";
+            document.getElementById('bottom-selection').innerHTML = "";
+
+            // 上段のキューを作成
+            for(let i=0; i<5; i++) pushTopQueue();
+            // 下段の選択肢を作成
+            for(let i=0; i<5; i++) pushSelection();
+        }
+
+        function pushTopQueue() {
+            const size = Math.random() > 0.5 ? 2 : 4;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const data = { size, color };
+            topQueue.push(data);
+            renderTop();
+        }
+
+        function pushSelection() {
+            const size = Math.random() > 0.5 ? 2 : 4;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const data = { size, color, id: Date.now() + Math.random() };
+            selectionPool.push(data);
+            renderBottom();
+        }
+
+        function renderTop() {
+            const area = document.getElementById('top-queue');
+            area.innerHTML = "";
+            topQueue.forEach((block, idx) => {
+                const b = document.createElement('div');
+                b.className = `block size-${block.size}`;
+                b.style.background = block.color;
+                if(idx === 0) b.style.boxShadow = "0 0 15px #fff"; // 先頭を強調
+                area.appendChild(b);
+            });
+        }
+
+        function renderBottom() {
+            const area = document.getElementById('bottom-selection');
+            area.innerHTML = "";
+            selectionPool.slice(0, 5).forEach(block => {
+                const b = document.createElement('div');
+                b.className = `block hole size-${block.size}`;
+                b.style.borderColor = block.color;
+                b.onclick = () => tryMatch(block);
+                area.appendChild(b);
+            });
+        }
+
+        function tryMatch(selected) {
+            const target = topQueue[0];
+            const dropZone = document.getElementById('active-target');
             
-            // 上段にブロックを生成
-            for(let i=0; i<3; i++) {
-                addTopBlock();
-            }
+            // 中央に移動させる演出
+            dropZone.innerHTML = `<div class="block hole size-${selected.size}" style="border-color:${selected.color}"></div>`;
             
-            // 下段に「穴」の空いた土台を生成
-            for(let i=0; i<4; i++) {
-                addBottomSlot();
-            }
-        }
+            if (selected.size === target.size && selected.color === target.color) {
+                // マッチ成功！
+                score += 100;
+                stageTotal--;
+                document.getElementById('score').innerText = score;
+                document.getElementById('remain-count').innerText = stageTotal;
 
-        function addTopBlock() {
-            const sizes = [2, 4];
-            const size = sizes[Math.floor(Math.random() * sizes.length)];
-            const b = document.createElement('div');
-            b.className = `block size-${size}`;
-            b.innerText = size;
-            b.onclick = () => dropBlock(size, b);
-            document.getElementById('top-area').appendChild(b);
-        }
-
-        function addBottomSlot() {
-            const sizes = [2, 4];
-            const size = sizes[Math.floor(Math.random() * sizes.length)];
-            const s = document.createElement('div');
-            s.style.width = (size * 30) + "px";
-            s.style.height = "80px";
-            s.style.border = "2px dashed #94a3b8";
-            s.style.margin = "0 10px";
-            s.style.display = "flex";
-            s.style.alignItems = "center";
-            s.style.justifyContent = "center";
-            s.style.color = "#94a3b8";
-            s.innerText = size;
-            s.dataset.size = size;
-            document.getElementById('bottom-area').appendChild(s);
-        }
-
-        function dropBlock(size, element) {
-            // 下段の左端の穴とチェック
-            const firstSlot = document.getElementById('bottom-area').firstChild;
-            if (firstSlot && firstSlot.dataset.size == size) {
-                // 成功！
-                score += (size * 10) * currentStage;
-                document.getElementById('score-display').innerText = "Score: " + score;
-                
-                // 消去と補充の演出（簡易版）
-                element.remove();
-                firstSlot.remove();
-                
-                addTopBlock();
-                addBottomSlot();
+                // 上からブロックが降ってくる演出の代わりに即消去
+                dropZone.firstChild.style.background = target.color;
+                setTimeout(() => {
+                    dropZone.innerHTML = "";
+                    topQueue.shift();
+                    pushTopQueue();
+                    
+                    // 下段を補充
+                    selectionPool = selectionPool.filter(b => b.id !== selected.id);
+                    pushSelection();
+                    
+                    if(stageTotal <= 0) {
+                        alert("ステージクリア！");
+                        document.getElementById('menu').style.display = 'flex';
+                    }
+                }, 200);
             } else {
-                // 失敗
-                alert("サイズが合いません！");
+                // ミス
+                dropZone.firstChild.style.transform = "translateX(10px)";
+                setTimeout(() => dropZone.innerHTML = "", 300);
             }
-        }
-
-        function gameOver() {
-            alert("閉店！ スコア: " + score);
-            document.getElementById('menu').style.display = 'flex';
         }
     </script>
 </body>
