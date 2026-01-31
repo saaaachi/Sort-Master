@@ -3,167 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Block Matcher Deluxe</title>
+    <title>Block & Ball Matcher</title>
     <style>
+        /* スタイルは変更なし */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: #1e293b; font-family: sans-serif; overflow: hidden; color: white; }
-        
-        #game-ui { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-around; font-weight: bold; }
-        
-        /* 上段：次に落ちてくるブロック */
-        #top-queue { height: 100px; margin-top: 40px; display: flex; justify-content: center; align-items: center; gap: 15px; background: rgba(255,255,255,0.05); }
-
-        /* 中段：合体エリア */
-        #drop-zone { height: 200px; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 2px solid #475569; }
-        
-        /* 下段：待機ブロック（選択用） */
-        #bottom-selection { height: 180px; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; background: #334155; }
-
-        .block { border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; border: 2px solid rgba(255,255,255,0.2); }
-        /* レゴのポッチ風デザイン */
-        .block::before { content: ""; position: absolute; top: -5px; width: 80%; height: 5px; background: inherit; border-radius: 2px 2px 0 0; opacity: 0.8; }
-
-        .hole { border: 3px dashed rgba(255,255,255,0.3) !important; background: transparent !important; }
-        
+        body { margin: 0; background: #0f172a; font-family: sans-serif; overflow: hidden; color: white; position: fixed; width: 100%; height: 100%; }
+        .ad-area { position: fixed; left: 0; width: 100%; height: 100px; background: #222; z-index: 1000; overflow: hidden; }
+        #ad-top { top: 0; } #ad-bottom { bottom: 0; }
+        #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; display: flex; flex-direction: column; }
+        #ball-area { height: 160px; display: flex; justify-content: center; align-items: flex-start; gap: 20px; padding-top: 10px; background: rgba(0,0,0,0.2); }
+        .ball-column { display: flex; flex-direction: column-reverse; gap: 5px; width: 50px; align-items: center; }
+        .ball { width: 35px; height: 35px; border-radius: 50%; box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); }
+        #mid-area { height: 100px; border-top: 2px solid #475569; border-bottom: 2px solid #475569; display: flex; justify-content: center; align-items: center; gap: 8px; background: #0f172a; }
+        .work-slot { width: 55px; height: 55px; border: 1px solid #334155; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .work-slot.locked { background: #000; border: none; opacity: 0.5; }
+        .work-slot.locked::after { content: "🔒"; font-size: 12px; }
+        #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; position: relative; }
+        .block { border-radius: 8px; border: 3px dashed rgba(255,255,255,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .size-2 { width: 50px; height: 50px; }
         .size-4 { width: 100px; height: 50px; }
-
-        /* 右下の残り枚数 */
-        #count-display { position: fixed; bottom: 20px; right: 20px; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 20px; }
-
-        #menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .stage-btn { padding: 15px 40px; margin: 10px; background: #3b82f6; border: none; border-radius: 30px; color: white; font-weight: bold; cursor: pointer; }
+        #remain-count { position: absolute; bottom: 10px; right: 10px; font-size: 12px; background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 10px; }
+        #stat-bar { height: 40px; background: #000; display: flex; justify-content: space-around; align-items: center; font-size: 12px; color: #facc15; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; flex-direction: column; align-items: center; padding-top: 20px; overflow-y: auto; }
+        .shop-item { width: 90%; background: #334155; margin: 5px 0; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .buy-btn { background: #facc15; color: #000; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
+        .buy-btn:disabled { opacity: 0.4; }
+        #bigAdScreen { background: #000; z-index: 3000; display: none; }
+        .close-ad { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; display: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="game-ui">
-        <span>SCORE: <span id="score">0</span></span>
-        <span>STAGE: <span id="stage-num">1</span></span>
+    <div id="ad-top" class="ad-area"><iframe src="ad.html" style="border:none; width:100%; height:100px;"></iframe></div>
+
+    <div id="game-outer">
+        <div id="stat-bar">
+            <span>Score: <span id="ui-score">0</span></span>
+            <span>💰: <span id="ui-coins">0</span></span>
+            <span>Stage: <span id="ui-stage">1</span></span>
+        </div>
+        <div id="ball-area"><div class="ball-column" id="col-0"></div><div class="ball-column" id="col-1"></div><div class="ball-column" id="col-2"></div></div>
+        <div id="mid-area"></div>
+        <div id="bottom-area"><div id="remain-count">残り: 0</div></div>
+        <div style="display:flex; justify-content: center; gap:20px; margin-bottom:10px;">
+            <button onclick="useItem('ball')" style="background:#475569; color:white; border:none; padding:8px 12px; border-radius:5px;">上段🔀 (<span id="count-sh-b">0</span>)</button>
+            <button onclick="useItem('block')" style="background:#475569; color:white; border:none; padding:8px 12px; border-radius:5px;">下段🔀 (<span id="count-sh-bl">0</span>)</button>
+        </div>
     </div>
 
-    <div id="top-queue"></div>
-    
-    <div id="drop-zone">
-        <div id="active-target"></div>
+    <div id="menuScreen" class="overlay">
+        <h2 style="color:#facc15">Block & Ball Matcher</h2>
+        <div style="font-size:20px; margin-bottom:20px;">💰 <span id="shop-coins">0</span></div>
+        <div class="shop-item"><span>💎 単価 (Lv.<span id="lv-v">0</span>): <span id="val-v">10</span>円</span><button id="btn-v" class="buy-btn" onclick="buy('value')">💰 <span id="cost-v">10</span></button></div>
+        <div class="shop-item" id="shop-stage" style="display:none;"><span>⏩ ステージスキップ</span><button id="btn-s" class="buy-btn" onclick="buy('stage')">💰 <span id="cost-s">500</span></button></div>
+        <div class="shop-item" id="shop-slot" style="display:none;"><span>➕ 中段枠追加 (<span id="lv-slot">0</span>/2)</span><button id="btn-slot" class="buy-btn" onclick="buy('slot')">💰 <span id="cost-slot">3000</span></button></div>
+        <div class="shop-item" id="shop-sh-b" style="display:none;"><span>🔀 上段シャッフル</span><button class="buy-btn" onclick="buy('sh-b')">💰 500</button></div>
+        <div class="shop-item" id="shop-sh-bl" style="display:none;"><span>🔀 下段シャッフル</span><button class="buy-btn" onclick="buy('sh-bl')">💰 1000</button></div>
+        <button onclick="startGame()" style="margin-top:30px; padding:15px 60px; border-radius:30px; border:none; background:#22c55e; color:white; font-size:20px; font-weight:bold;">START</button>
     </div>
 
-    <div id="bottom-selection"></div>
-
-    <div id="count-display">残り: <span id="remain-count">0</span></div>
-
-    <div id="menu">
-        <h1 style="color:#facc15">BLOCK MATCHER</h1>
-        <button class="stage-btn" onclick="startStage(1, 10)">Stage 1 (Easy)</button>
-        <button class="stage-btn" onclick="startStage(2, 20)">Stage 2 (Medium)</button>
-        <button class="stage-btn" onclick="startStage(3, 40)">Stage 3 (Hard)</button>
+    <div id="bigAdScreen" class="overlay">
+        <div id="ad-close-btn" class="close-ad" onclick="closeAd()">×</div>
+        <iframe id="ad-frame" src="" style="width:90%; height:80%; border:none;"></iframe>
     </div>
+
+    <div id="ad-bottom" class="ad-area"><iframe src="ad.html" style="border:none; width:100%; height:100px;"></iframe></div>
 
     <script>
+        let score = 0, stage = 1, gameActive = false;
+        let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
         const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7'];
-        let stageTotal = 0;
-        let score = 0;
-        let topQueue = [];
-        let selectionPool = [];
+        let balls = [[],[],[]], blocks = [], midSlots = [], stageRemain = 0;
 
-        function startStage(num, total) {
-            score = 0;
-            stageTotal = total;
-            document.getElementById('stage-num').innerText = num;
-            document.getElementById('score').innerText = score;
-            document.getElementById('remain-count').innerText = stageTotal;
-            document.getElementById('menu').style.display = 'none';
-            initGame();
+        function loadData() {
+            const saved = localStorage.getItem('bbMatcher_save');
+            if(saved) userData = {...userData, ...JSON.parse(saved)};
+            updateShopUI();
         }
+        function saveData() { localStorage.setItem('bbMatcher_save', JSON.stringify(userData)); }
 
-        function initGame() {
-            topQueue = [];
-            selectionPool = [];
-            document.getElementById('top-queue').innerHTML = "";
-            document.getElementById('bottom-selection').innerHTML = "";
-
-            // 上段のキューを作成
-            for(let i=0; i<5; i++) pushTopQueue();
-            // 下段の選択肢を作成
-            for(let i=0; i<5; i++) pushSelection();
-        }
-
-        function pushTopQueue() {
-            const size = Math.random() > 0.5 ? 2 : 4;
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const data = { size, color };
-            topQueue.push(data);
-            renderTop();
-        }
-
-        function pushSelection() {
-            const size = Math.random() > 0.5 ? 2 : 4;
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const data = { size, color, id: Date.now() + Math.random() };
-            selectionPool.push(data);
-            renderBottom();
-        }
-
-        function renderTop() {
-            const area = document.getElementById('top-queue');
-            area.innerHTML = "";
-            topQueue.forEach((block, idx) => {
-                const b = document.createElement('div');
-                b.className = `block size-${block.size}`;
-                b.style.background = block.color;
-                if(idx === 0) b.style.boxShadow = "0 0 15px #fff"; // 先頭を強調
-                area.appendChild(b);
-            });
-        }
-
-        function renderBottom() {
-            const area = document.getElementById('bottom-selection');
-            area.innerHTML = "";
-            selectionPool.slice(0, 5).forEach(block => {
-                const b = document.createElement('div');
-                b.className = `block hole size-${block.size}`;
-                b.style.borderColor = block.color;
-                b.onclick = () => tryMatch(block);
-                area.appendChild(b);
-            });
-        }
-
-        function tryMatch(selected) {
-            const target = topQueue[0];
-            const dropZone = document.getElementById('active-target');
+        function updateShopUI() {
+            document.getElementById('shop-coins').innerText = Math.floor(userData.coins);
+            document.getElementById('ui-coins').innerText = Math.floor(userData.coins);
+            document.getElementById('lv-v').innerText = userData.vLv;
             
-            // 中央に移動させる演出
-            dropZone.innerHTML = `<div class="block hole size-${selected.size}" style="border-color:${selected.color}"></div>`;
-            
-            if (selected.size === target.size && selected.color === target.color) {
-                // マッチ成功！
-                score += 100;
-                stageTotal--;
-                document.getElementById('score').innerText = score;
-                document.getElementById('remain-count').innerText = stageTotal;
+            // 単価：Lv0=10, Lv1=11, Lv2=12... (1円ずつアップ)
+            let currentVal = 10 + userData.vLv;
+            document.getElementById('val-v').innerText = currentVal;
 
-                // 上からブロックが降ってくる演出の代わりに即消去
-                dropZone.firstChild.style.background = target.color;
-                setTimeout(() => {
-                    dropZone.innerHTML = "";
-                    topQueue.shift();
-                    pushTopQueue();
-                    
-                    // 下段を補充
-                    selectionPool = selectionPool.filter(b => b.id !== selected.id);
-                    pushSelection();
-                    
-                    if(stageTotal <= 0) {
-                        alert("ステージクリア！");
-                        document.getElementById('menu').style.display = 'flex';
-                    }
-                }, 200);
-            } else {
-                // ミス
-                dropZone.firstChild.style.transform = "translateX(10px)";
-                setTimeout(() => dropZone.innerHTML = "", 300);
+            // 購入価格：Lv0→1は10、Lv1→2は80、それ以降は1.88倍(1の位切り上げ)
+            let costV = 10;
+            if (userData.vLv === 1) costV = 80;
+            else if (userData.vLv > 1) {
+                // Lv1の80円をベースに1.88倍していく
+                let base = 80;
+                for(let i=1; i<userData.vLv; i++) { base *= 1.88; }
+                costV = Math.ceil(base / 10) * 10;
+            }
+            document.getElementById('cost-v').innerText = costV;
+
+            // 解放条件
+            if(userData.vLv >= 1) document.getElementById('shop-stage').style.display = 'flex';
+            let costS = 500 * Math.pow(2.2, userData.sLv - 1);
+            document.getElementById('cost-s').innerText = Math.ceil(costS / 10) * 10;
+
+            if(userData.vLv >= 5) {
+                document.getElementById('shop-slot').style.display = 'flex';
+                document.getElementById('shop-sh-b').style.display = 'flex';
+                document.getElementById('shop-sh-bl').style.display = 'flex';
+            }
+            document.getElementById('lv-slot').innerText = userData.slotLv;
+            document.getElementById('cost-slot').innerText = userData.slotLv === 0 ? 3000 : 100000;
+            document.getElementById('count-sh-b').innerText = userData.shB;
+            document.getElementById('count-sh-bl').innerText = userData.shBl;
+        }
+
+        function buy(type) {
+            let cost = 0;
+            if(type === 'value') {
+                if(userData.vLv === 0) cost = 10;
+                else if(userData.vLv === 1) cost = 80;
+                else {
+                    let base = 80;
+                    for(let i=1; i<userData.vLv; i++) { base *= 1.88; }
+                    cost = Math.ceil(base / 10) * 10;
+                }
+            }
+            if(type === 'stage') cost = Math.ceil((500 * Math.pow(2.2, userData.sLv - 1)) / 10) * 10;
+            if(type === 'slot') cost = userData.slotLv === 0 ? 3000 : 100000;
+            if(type === 'sh-b') cost = 500;
+            if(type === 'sh-bl') cost = 1000;
+
+            if(userData.coins >= cost) {
+                userData.coins -= cost;
+                if(type==='value') userData.vLv++;
+                if(type==='stage') { userData.sLv++; stage = userData.sLv; }
+                if(type==='slot' && userData.slotLv < 2) userData.slotLv++;
+                if(type==='sh-b') userData.shB++;
+                if(type==='sh-bl') userData.shBl++;
+                saveData(); updateShopUI();
             }
         }
+
+        /* ゲームロジックは前回同様 */
+        function startGame() {
+            stage = userData.sLv; score = 0; stageRemain = 10 + (stage * 5);
+            document.getElementById('menuScreen').style.display = 'none';
+            document.getElementById('ui-stage').innerText = stage;
+            initBoard(); gameActive = true;
+        }
+        function initBoard() {
+            const mid = document.getElementById('mid-area'); mid.innerHTML = ""; midSlots = [];
+            let slotCount = 4 + userData.slotLv;
+            for(let i=0; i<6; i++) {
+                const s = document.createElement('div');
+                s.className = "work-slot" + (i >= slotCount ? " locked" : "");
+                mid.appendChild(s); if(i < slotCount) midSlots.push({ el: s, block: null });
+            }
+            balls = [[],[],[]]; for(let i=0; i<3; i++) for(let j=0; j<4; j++) addBall(i);
+            blocks = []; for(let i=0; i<4; i++) addBlock();
+            renderAll();
+        }
+        function addBall(col) { balls[col].push(colors[Math.floor(Math.random() * colors.length)]); }
+        function addBlock() {
+            const size = Math.random() > 0.5 ? 2 : 4;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            blocks.push({ size, color, id: Date.now() + Math.random() });
+        }
+        function renderAll() {
+            for(let i=0; i<3; i++) {
+                const colEl = document.getElementById('col-'+i); colEl.innerHTML = "";
+                balls[i].forEach(c => {
+                    const b = document.createElement('div'); b.className = "ball"; b.style.background = c;
+                    b.onclick = () => selectBall(i); colEl.appendChild(b);
+                });
+            }
+            const bArea = document.getElementById('bottom-area'); const remain = document.getElementById('remain-count');
+            bArea.innerHTML = ""; bArea.appendChild(remain);
+            blocks.slice(0, 4).forEach(bl => {
+                const el = document.createElement('div'); el.className = `block size-${bl.size}`; el.style.borderColor = bl.color;
+                el.onclick = () => selectBlock(bl); bArea.appendChild(el);
+            });
+            remain.innerText = "残り: " + stageRemain;
+            document.getElementById('ui-score').innerText = score;
+        }
+        function selectBlock(bl) {
+            const freeSlot = midSlots.find(s => !s.block); if(!freeSlot) return;
+            freeSlot.block = bl;
+            freeSlot.el.innerHTML = `<div class="block size-2" style="border-color:${bl.color}; width:35px; height:35px; border-style:dashed;"></div>`;
+            blocks = blocks.filter(b => b.id !== bl.id);
+            if(stageRemain > blocks.length) addBlock();
+            renderAll();
+        }
+        function selectBall(colIdx) {
+            if(!gameActive) return;
+            const ballColor = balls[colIdx][0];
+            const matchSlot = midSlots.find(s => s.block && s.block.color === ballColor);
+            if(matchSlot) {
+                balls[colIdx].shift(); if(stageRemain > 0) addBall(colIdx);
+                score += 100;
+                let priceV = 10 + userData.vLv;
+                userData.coins += priceV;
+                matchSlot.block = null; matchSlot.el.innerHTML = "";
+                stageRemain--;
+                if(stageRemain <= 0 && midSlots.every(s => !s.block)) { alert("STAGE CLEAR!"); gameOver(); }
+                renderAll(); updateShopUI();
+            } else {
+                if(midSlots.every(s => s.block)) gameOver();
+            }
+        }
+        function useItem(type) {
+            if(type === 'ball' && userData.shB > 0) { userData.shB--; balls.forEach(c => c.sort(() => Math.random() - 0.5)); }
+            else if(type === 'block' && userData.shBl > 0) { userData.shBl--; blocks.sort(() => Math.random() - 0.5); }
+            saveData(); renderAll(); updateShopUI();
+        }
+        function gameOver() {
+            gameActive = false; userData.playCount++; saveData();
+            if(userData.playCount === 2 || (userData.playCount > 2 && (userData.playCount-2)%5 === 0)) showBigAd();
+            else document.getElementById('menuScreen').style.display = 'flex';
+        }
+        function showBigAd() {
+            const scr = document.getElementById('bigAdScreen'); scr.style.display = 'flex';
+            document.getElementById('ad-frame').src = "ad_large.html";
+            setTimeout(() => { document.getElementById('ad-close-btn').style.display = 'block'; }, 3000);
+        }
+        function closeAd() { document.getElementById('bigAdScreen').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; }
+        window.onload = loadData;
     </script>
 </body>
 </html>
