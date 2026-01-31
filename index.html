@@ -8,7 +8,6 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { background: #0f172a; font-family: sans-serif; overflow: hidden; color: white; position: fixed; width: 100%; height: 100%; }
         
-        /* 固定広告エリア */
         .ad-fix { position: fixed; left: 0; width: 100%; height: 100px; background: #222; z-index: 3000; overflow: hidden; }
         #ad-top { top: 0; } #ad-bottom { bottom: 0; }
         iframe { width: 100%; height: 100%; border: none; }
@@ -16,26 +15,23 @@
         #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; display: flex; flex-direction: column; }
         #stat-bar { height: 40px; background: #000; display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: #facc15; }
 
-        /* ボールエリア：落ちてくる演出 */
-        #ball-area { height: 160px; display: flex; justify-content: center; align-items: flex-end; gap: 15px; padding-bottom: 10px; background: rgba(0,0,0,0.3); }
-        .ball-column { display: flex; flex-direction: column-reverse; gap: 5px; width: 45px; align-items: center; min-height: 140px; }
-        .ball { width: 35px; height: 35px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
-        .drop-ani { animation: dropIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        #ball-area { height: 160px; display: flex; justify-content: center; align-items: flex-end; gap: 12px; padding-bottom: 10px; background: rgba(0,0,0,0.3); }
+        .ball-column { display: flex; flex-direction: column-reverse; gap: 5px; width: 42px; align-items: center; min-height: 140px; }
+        .ball { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.2s; }
+        .drop-ani { animation: dropIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes dropIn { from { transform: translateY(-120px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* 中段スロット */
         #mid-area { height: 100px; border-top: 2px solid #475569; border-bottom: 2px solid #475569; display: flex; justify-content: center; align-items: center; gap: 8px; background: #0f172a; }
-        .work-slot { width: 55px; height: 55px; border: 1px solid #334155; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; }
+        .work-slot { width: 55px; height: 55px; border: 1px solid #334155; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; position: relative; }
         .work-slot.locked { background: #000; opacity: 0.5; }
         .work-slot.locked::after { content: "🔒"; font-size: 14px; }
 
-        /* 下段ブロック：流れる演出 */
-        #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 12px; padding: 10px; overflow: hidden; }
+        #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; overflow: hidden; }
         .block { border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); cursor: pointer; display: flex; flex-wrap: wrap; gap: 3px; padding: 5px; justify-content: center; align-content: center; background: rgba(255,255,255,0.05); }
         .slide-ani { animation: slideLeft 0.3s ease-out; }
         @keyframes slideLeft { from { transform: translateX(50px); } to { transform: translateX(0); } }
         
-        .size-4 { width: 62px; height: 62px; } /* 2x2用 */
+        .size-4 { width: 62px; height: 62px; }
         .size-2 { width: 42px; height: 42px; }
         .hole-spot { width: 14px; height: 14px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 2px; }
         .hole-spot.filled { border: none; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
@@ -44,7 +40,6 @@
         .shop-item { width: 90%; background: #1e293b; margin: 6px 0; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
         .buy-btn { background: #facc15; color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
-        /* 大画面広告用 */
         #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; }
         .inter-content { width: 90%; height: 80%; background: #fff; border-radius: 15px; position: relative; }
         .close-x { position: absolute; top: -45px; right: 0; color: #fff; font-size: 35px; cursor: pointer; padding: 10px; }
@@ -65,33 +60,24 @@
         <div style="display:flex; justify-content: center; gap:8px; padding: 10px; background: #1e293b; z-index:10;">
             <button onclick="useItem('ball')" style="background:#475569; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:11px;">上🔀(<span id="count-sh-b">0</span>)</button>
             <button onclick="useItem('block')" style="background:#475569; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:11px;">下🔀(<span id="count-sh-bl">0</span>)</button>
-            <button onclick="buyTempSlot()" style="background:#b91c1c; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:11px;">緊急枠(1000)</button>
+            <button onclick="buyTempSlot()" style="background:#b91c1c; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:11px;">救済枠(1000)</button>
         </div>
     </div>
 
     <div id="menuScreen" class="overlay">
         <h2 style="color:#facc15; margin-bottom:10px;">Ball Matcher EX</h2>
         <div style="font-size:22px; margin-bottom:20px;">💰 <span id="shop-coins">0</span></div>
-        
         <div class="shop-item"><span>💎 単価 Lv.<span id="lv-v">0</span></span><button class="buy-btn" onclick="buy('value')">💰 <span id="cost-v">0</span></button></div>
-        
         <div id="adv-shop" style="display:none; width:100%;">
             <div class="shop-item"><span>➕ 永続枠追加 (<span id="lv-slot">0</span>/2)</span><button class="buy-btn" onclick="buy('slot')">💰 <span id="cost-slot">0</span></button></div>
             <div class="shop-item"><span>🔀 上段シャッフル</span><button class="buy-btn" onclick="buy('sh-b')">💰 500</button></div>
             <div class="shop-item"><span>🔀 下段シャッフル</span><button class="buy-btn" onclick="buy('sh-bl')">💰 1000</button></div>
         </div>
-
         <button onclick="startGame()" style="margin:25px 0; padding:18px 70px; border-radius:35px; border:none; background:#22c55e; color:white; font-size:22px; font-weight:bold; cursor:pointer;">START</button>
         <a href="https://saaaachi.github.io/Task-Master/" style="color:#3b82f6; text-decoration:none; font-size:15px;" target="_blank">Other Games</a>
     </div>
 
-    <div id="inter-screen">
-        <div class="inter-content">
-            <div class="close-x" onclick="closeLargeAd()">×</div>
-            <iframe src="ad_large.html"></iframe>
-        </div>
-    </div>
-
+    <div id="inter-screen"><div class="inter-content"><div class="close-x" onclick="closeLargeAd()">×</div><iframe src="ad_large.html"></iframe></div></div>
     <div id="ad-bottom" class="ad-fix"><iframe src="ad.html"></iframe></div>
 
     <script>
@@ -101,19 +87,32 @@
         let balls = [], blocks = [], midSlots = [], stageRem = 0, colCount = 2;
 
         function load() {
-            const saved = localStorage.getItem('ball_matcher_v64');
+            const saved = localStorage.getItem('ball_matcher_v65');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
             updateUI();
         }
-        function save() { localStorage.setItem('ball_matcher_v64', JSON.stringify(userData)); }
+        function save() { localStorage.setItem('ball_matcher_v65', JSON.stringify(userData)); }
 
+        // 指示通りの経済バランス
         function getCost() {
             let lv = userData.vLv;
-            if(lv === 0) return 10;
-            let m = 1.3; // 初期は緩やか
-            if(10 + lv >= 20) m = 1.5; // 単価20円から加速
-            if(10 + lv >= 35) m = 1.8; // 単価35円から超加速
-            return Math.ceil((80 * Math.pow(m, lv)) / 10) * 10;
+            let price = 10 + lv;
+            if (lv === 0) return 10;
+            if (price <= 15) return Math.ceil((80 * Math.pow(1.3, lv)) / 10) * 10;
+            if (price <= 20) {
+                let b6 = Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10;
+                return Math.ceil((b6 * Math.pow(1.2, lv - 5)) / 10) * 10;
+            }
+            if (price <= 35) {
+                let b10 = Math.ceil((Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10 * Math.pow(1.2, 5)) / 10) * 10;
+                return b10 + ((lv - 10) * 500);
+            }
+            if (price <= 50) {
+                let b25 = (Math.ceil((Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10 * Math.pow(1.2, 5)) / 10) * 10) + (15 * 500);
+                return b25 + ((lv - 25) * 800);
+            }
+            let b40 = ((Math.ceil((Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10 * Math.pow(1.2, 5)) / 10) * 10) + (15 * 500)) + (15 * 800);
+            return b40 + ((lv - 40) * 1000);
         }
 
         function updateUI() {
@@ -123,13 +122,13 @@
             document.getElementById('cost-v').innerText = getCost();
             document.getElementById('adv-shop').style.display = userData.vLv >= 5 ? 'block' : 'none';
             document.getElementById('lv-slot').innerText = userData.slotLv;
-            document.getElementById('cost-slot').innerText = userData.slotLv === 0 ? 3000 : 100000;
+            document.getElementById('cost-slot').innerText = userData.slotLv === 0 ? 3000 : 30000; // 3万に変更
             document.getElementById('count-sh-b').innerText = userData.shB;
             document.getElementById('count-sh-bl').innerText = userData.shBl;
         }
 
         function buy(type) {
-            let cost = (type==='value')?getCost():(type==='slot'?(userData.slotLv===0?3000:100000):(type==='sh-b'?500:1000));
+            let cost = (type==='value')?getCost():(type==='slot'?(userData.slotLv===0?3000:30000):(type==='sh-b'?500:1000));
             if(userData.coins >= cost) {
                 userData.coins -= cost;
                 if(type==='value') userData.vLv++;
@@ -141,12 +140,8 @@
 
         function startGame() {
             stage = userData.sLv; tempSlots = 0; sessCoins = 0;
-            if(stage===1){ colCount=2; stageRem=5; }
-            else if(stage===2){ colCount=2; stageRem=10; }
-            else {
-                colCount = stage >= 91 ? 5 : (stage >= 16 ? 4 : 3);
-                stageRem = 12 + (stage - 3);
-            }
+            colCount = stage >= 91 ? 5 : (stage >= 16 ? 4 : (stage >= 3 ? 3 : 2));
+            stageRem = (stage <= 2) ? (stage === 1 ? 5 : 10) : (12 + (stage - 3));
             document.getElementById('menuScreen').style.display = 'none';
             init(); gameActive = true;
         }
@@ -177,7 +172,16 @@
             }
         }
 
-        function addBall(i, ani) { balls[i].push({c: colors[Math.floor(Math.random()*colors.length)], ani}); }
+        // 戦略的補充システム：現在スロットにある色を優先的に出す
+        function getSmartColor() {
+            let activeColors = midSlots.filter(s => s.block && s.filled < s.block.size).map(s => s.block.c);
+            if(activeColors.length > 0 && Math.random() > 0.4) {
+                return activeColors[Math.floor(Math.random() * activeColors.length)];
+            }
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function addBall(i, ani) { balls[i].push({c: getSmartColor(), ani}); }
         function addBlock() { blocks.push({size: Math.random()>0.7?4:2, c: colors[Math.floor(Math.random()*colors.length)], id: Math.random()}); }
 
         function render(aniCol = null) {
@@ -205,7 +209,7 @@
         function selectBlock(bl, idx) {
             let slot = midSlots.find(s=>!s.block); if(!slot) return;
             slot.block = bl; drawSlot(slot);
-            blocks.splice(idx, 1); // 選んだやつだけ消す
+            blocks.splice(idx, 1);
             if(stageRem > blocks.length) addBlock();
             render();
         }
@@ -223,11 +227,11 @@
             let color = balls[i][0].c;
             let slot = midSlots.find(s => s.block && s.block.c === color && s.filled < s.block.size);
             if(slot) {
-                balls[i].shift(); addBall(i, true); // 選んだ列だけ補充
+                balls[i].shift(); addBall(i, true);
                 slot.filled++; drawSlot(slot);
                 if(slot.filled === slot.block.size) {
                     let base = 10 + userData.vLv;
-                    sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base) + (stage * 2); // ステージボーナス追加
+                    sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base) + (stage * 2);
                     setTimeout(() => {
                         slot.block = null; slot.filled = 0; drawSlot(slot); stageRem--;
                         if(stageRem <= 0 && midSlots.every(s=>!s.block)){ alert("CLEAR!"); userData.sLv++; end(1.2); }
@@ -239,7 +243,7 @@
 
         function checkOver() {
             if(gameActive && midSlots.every(s=>s.block)) {
-                if(!midSlots.some(s => balls.some(c => c[0].c === s.block.c && s.filled < s.block.size))) {
+                if(!midSlots.some(s => balls.some(c => c[0].c === s.block.c))) {
                     alert("GAME OVER"); end(0.6);
                 }
             }
