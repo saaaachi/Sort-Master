@@ -3,54 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Block & Ball Matcher Extreme</title>
+    <title>Ball Matcher EX</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { background: #0f172a; font-family: sans-serif; overflow: hidden; color: white; position: fixed; width: 100%; height: 100%; }
         
-        /* 固定広告エリア */
-        .ad-fix { position: fixed; left: 0; width: 100%; height: 100px; background: #222; z-index: 1000; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #666; border: 1px solid #333; }
+        /* 固定広告エリア（全画面共通） */
+        .ad-fix { position: fixed; left: 0; width: 100%; height: 100px; background: #222; z-index: 3000; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; border: 1px solid #333; }
         #ad-top { top: 0; } #ad-bottom { bottom: 0; }
 
-        #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; display: flex; flex-direction: column; overflow: hidden; }
-        #stat-bar { height: 40px; background: #000; display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: #facc15; z-index: 10; }
+        #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; display: flex; flex-direction: column; }
+        
+        /* UI */
+        #stat-bar { height: 40px; background: #000; display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: #facc15; }
 
-        /* ボールエリア：落ちてくるアニメーション */
+        /* ボールエリア */
         #ball-area { height: 160px; display: flex; justify-content: center; align-items: flex-end; gap: 15px; padding-bottom: 10px; background: rgba(0,0,0,0.3); }
         .ball-column { display: flex; flex-direction: column-reverse; gap: 5px; width: 45px; align-items: center; min-height: 140px; }
-        .ball { width: 35px; height: 35px; border-radius: 50%; box-shadow: inset -3px -3px 5px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); cursor: pointer; animation: dropIn 0.3s ease-out; }
-        @keyframes dropIn { from { transform: translateY(-150px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .ball { width: 35px; height: 35px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
+        .ball.new-drop { animation: dropIn 0.3s ease-out; }
+        @keyframes dropIn { from { transform: translateY(-120px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* 中段：作業枠 */
+        /* 中段：スロット */
         #mid-area { height: 100px; border-top: 2px solid #475569; border-bottom: 2px solid #475569; display: flex; justify-content: center; align-items: center; gap: 8px; background: #0f172a; }
-        .work-slot { width: 55px; height: 55px; border: 1px solid #334155; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
+        .work-slot { width: 55px; height: 55px; border: 1px solid #334155; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; position: relative; }
         .work-slot.locked { background: #000; opacity: 0.5; }
         .work-slot.locked::after { content: "🔒"; font-size: 14px; }
 
-        /* 下段：ブロック生成（右から流れる） */
-        #bottom-area { flex-grow: 1; display: flex; justify-content: flex-start; align-items: center; gap: 15px; padding: 10px 40px; overflow-x: hidden; position: relative; }
-        .block { border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-items: center; background: rgba(255,255,255,0.05); animation: slideIn 0.4s ease-out; flex-shrink: 0; }
-        @keyframes slideIn { from { transform: translateX(200px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        /* 下段：ブロック */
+        #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 15px; padding: 10px; position: relative; }
+        .block { border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-content: center; background: rgba(255,255,255,0.05); }
+        .block.sliding { animation: slideLeft 0.3s ease-out; }
+        @keyframes slideLeft { from { transform: translateX(20px); } to { transform: translateX(0); } }
         
-        .hole-spot { width: 12px; height: 12px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 2px; }
+        /* 2x2穴のスタイル */
+        .size-4 { width: 65px; height: 65px; }
+        .size-2 { width: 45px; height: 45px; }
+        .hole-spot { width: 15px; height: 15px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 2px; }
         .hole-spot.filled { border: none; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
-        #remain-count { position: absolute; bottom: 5px; right: 10px; font-size: 12px; background: rgba(0,0,0,0.6); padding: 2px 10px; border-radius: 10px; z-index: 20; }
 
-        /* メニュー・ショップ */
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000; display: flex; flex-direction: column; align-items: center; padding-top: 20px; overflow-y: auto; }
+        /* オーバーレイ */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000; display: flex; flex-direction: column; align-items: center; padding-top: 110px; overflow-y: auto; }
         .shop-item { width: 90%; background: #1e293b; margin: 6px 0; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
         .buy-btn { background: #facc15; color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .start-btn { margin: 20px 0; padding: 18px 70px; border-radius: 35px; border: none; background: #22c55e; color: white; font-size: 22px; font-weight: bold; cursor: pointer; }
-        .other-games-btn { background: #3b82f6; color: white; border: none; padding: 12px 40px; border-radius: 25px; font-weight: bold; text-decoration: none; font-size: 14px; }
+        .start-btn { margin: 20px 0; padding: 18px 70px; border-radius: 35px; border: none; background: #22c55e; color: white; font-size: 22px; font-weight: bold; }
         
-        /* 大サイズ広告（擬似） */
-        #interstitial { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
-        .ad-box { width: 90%; height: 70%; background: white; border-radius: 10px; position: relative; }
-        .close-ad { position: absolute; top: -40px; right: 0; color: white; font-size: 30px; cursor: pointer; }
+        #interstitial { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
-    <div id="ad-top" class="ad-fix">AD SPACE (TOP)</div>
+    <div id="ad-top" class="ad-fix">【AD SPACE】</div>
 
     <div id="game-outer">
         <div id="stat-bar">
@@ -60,249 +62,220 @@
         </div>
         <div id="ball-area"></div>
         <div id="mid-area"></div>
-        <div id="bottom-area"><div id="remain-count">残り: 0</div></div>
-        <div style="display:flex; justify-content: center; gap:20px; padding: 10px; background: #1e293b;">
-            <button onclick="useItem('ball')" style="background:#475569; color:white; border:none; padding:10px; border-radius:8px;">上段🔀 (<span id="count-sh-b">0</span>)</button>
-            <button onclick="useItem('block')" style="background:#475569; color:white; border:none; padding:10px; border-radius:8px;">下段🔀 (<span id="count-sh-bl">0</span>)</button>
+        <div id="bottom-area"></div>
+        <div style="display:flex; justify-content: center; gap:10px; padding: 10px; background: #1e293b;">
+            <button onclick="useItem('ball')" style="background:#475569; color:white; border:none; padding:8px; border-radius:5px; font-size:10px;">上🔀(<span id="count-sh-b">0</span>)</button>
+            <button onclick="useItem('block')" style="background:#475569; color:white; border:none; padding:8px; border-radius:5px; font-size:10px;">下🔀(<span id="count-sh-bl">0</span>)</button>
+            <button onclick="buyTemporarySlot()" id="temp-slot-btn" style="background:#b91c1c; color:white; border:none; padding:8px; border-radius:5px; font-size:10px;">緊急枠追加(1000)</button>
         </div>
     </div>
 
     <div id="menuScreen" class="overlay">
         <h2 style="color:#facc15; margin-bottom:10px;">Ball Matcher EX</h2>
         <div style="font-size:20px; margin-bottom:15px;">💰 <span id="shop-coins">0</span></div>
-        <div class="shop-item"><span>💎 コイン単価 Lv.<span id="lv-v">0</span></span><button class="buy-btn" onclick="buy('value')">💰 <span id="cost-v">10</span></button></div>
-        <div class="shop-item"><span>➕ スロット追加 (<span id="lv-slot">0</span>/2)</span><button class="buy-btn" onclick="buy('slot')">💰 <span id="cost-slot">3000</span></button></div>
-        <div class="shop-item"><span>🔀 上段シャッフル</span><button class="buy-btn" onclick="buy('sh-b')">💰 500</button></div>
-        <div class="shop-item"><span>🔀 下段シャッフル</span><button class="buy-btn" onclick="buy('sh-bl')">💰 1000</button></div>
+        <div class="shop-item"><span>💎 単価 Lv.<span id="lv-v">0</span></span><button class="buy-btn" onclick="buy('value')">💰 <span id="cost-v">0</span></button></div>
+        <div id="advanced-shop" style="display:none; width:100%; display:flex; flex-direction:column; align-items:center;">
+            <div class="shop-item"><span>➕ 枠追加 (<span id="lv-slot">0</span>/2)</span><button class="buy-btn" onclick="buy('slot')">💰 <span id="cost-slot">3000</span></button></div>
+            <div class="shop-item"><span>🔀 上段🔀</span><button class="buy-btn" onclick="buy('sh-b')">💰 500</button></div>
+            <div class="shop-item"><span>🔀 下段🔀</span><button class="buy-btn" onclick="buy('sh-bl')">💰 1000</button></div>
+        </div>
         <button class="start-btn" onclick="startGame()">START</button>
-        <a href="https://saaaachi.github.io/Task-Master/" class="other-games-btn" target="_blank">Other Games</a>
+        <a href="https://saaaachi.github.io/Task-Master/" style="color:#3b82f6; text-decoration:none; font-size:14px;" target="_blank">Other Games</a>
     </div>
 
     <div id="interstitial">
-        <div class="ad-box">
-            <div class="close-ad" onclick="closeAd()">×</div>
-            <div style="color:#000; padding:20px; text-align:center;">大サイズ広告表示テスト<br><br>ここに広告が入ります</div>
+        <div style="width:80%; height:60%; background:#fff; position:relative; color:#000; text-align:center; padding:20px; border-radius:10px;">
+            <div onclick="closeAd()" style="position:absolute; top:-40px; right:0; color:#fff; font-size:30px;">×</div>
+            <h3>SPONSOR AD</h3><p>広告がここに表示されます</p>
         </div>
     </div>
 
-    <div id="ad-bottom" class="ad-fix">AD SPACE (BOTTOM)</div>
+    <div id="ad-bottom" class="ad-fix">【AD SPACE】</div>
 
     <script>
-        let score = 0, stage = 1, gameActive = false, currentSessionCoins = 0;
         let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
+        let stage = 1, gameActive = false, currentSessionCoins = 0, tempSlots = 0;
         const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7'];
-        let balls = [], blocks = [], midSlots = [], stageRemain = 0, ballColsCount = 2;
+        let balls = [], blocks = [], midSlots = [], stageRemain = 0, ballColsCount = 3;
 
         function loadData() {
-            const saved = localStorage.getItem('bbMatcher_v62');
+            const saved = localStorage.getItem('ballMatcher_v63');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
             updateShopUI();
         }
-        function saveData() { localStorage.setItem('bbMatcher_v62', JSON.stringify(userData)); }
+        function saveData() { localStorage.setItem('ballMatcher_v63', JSON.stringify(userData)); }
+
+        function calculateCost() {
+            let base = 80, lv = userData.vLv;
+            if(lv === 0) return 10;
+            let multiplier = 1.88;
+            if(lv >= 25) multiplier = 1.99; // 単価35円(Lv25)から
+            if(lv >= 10) multiplier = 1.99; // 単価20円(Lv10)から 1.99
+            if(lv >= 25) multiplier = 2.05; // 単価35円(Lv25)から 2.05
+            
+            // 指示通り: 単価20円(Lv10)で1.99倍, 単価35円(Lv25)で2.05倍
+            let m = 1.88;
+            if(10 + lv >= 20) m = 1.99;
+            if(10 + lv >= 35) m = 2.05;
+            
+            return Math.ceil((base * Math.pow(m, lv)) / 10) * 10;
+        }
 
         function updateShopUI() {
             document.getElementById('shop-coins').innerText = Math.floor(userData.coins);
             document.getElementById('ui-coins').innerText = Math.floor(userData.coins);
             document.getElementById('lv-v').innerText = userData.vLv;
-            let costV = 10 + (userData.vLv * 50);
-            document.getElementById('cost-v').innerText = costV;
+            document.getElementById('cost-v').innerText = calculateCost();
+            document.getElementById('advanced-shop').style.display = userData.vLv >= 5 ? 'block' : 'none';
             document.getElementById('lv-slot').innerText = userData.slotLv;
-            document.getElementById('cost-slot').innerText = userData.slotLv === 0 ? 3000 : 10000;
+            document.getElementById('cost-slot').innerText = userData.slotLv === 0 ? 3000 : 100000;
             document.getElementById('count-sh-b').innerText = userData.shB;
             document.getElementById('count-sh-bl').innerText = userData.shBl;
         }
 
         function buy(type) {
-            let cost = 0;
-            if(type === 'value') cost = 10 + (userData.vLv * 50);
-            if(type === 'slot') cost = userData.slotLv === 0 ? 3000 : 10000;
-            if(type === 'sh-b') cost = 500; if(type === 'sh-bl') cost = 1000;
+            let cost = (type === 'value') ? calculateCost() : (type === 'slot' ? (userData.slotLv === 0 ? 3000 : 100000) : (type==='sh-b'?500:1000));
             if(userData.coins >= cost) {
                 userData.coins -= cost;
                 if(type==='value') userData.vLv++;
-                if(type==='slot' && userData.slotLv < 2) userData.slotLv++;
-                if(type==='sh-b') userData.shB++; if(type==='sh-bl') userData.shBl++;
+                if(type==='slot') userData.slotLv++;
+                if(type==='sh-b') userData.shB++;
+                if(type==='sh-bl') userData.shBl++;
                 saveData(); updateShopUI();
             }
         }
 
         function startGame() {
-            stage = userData.sLv;
-            currentSessionCoins = 0;
-            
-            // 難易度設定
+            stage = userData.sLv; tempSlots = 0; currentSessionCoins = 0;
             if(stage === 1) { ballColsCount = 2; stageRemain = 5; }
             else if(stage === 2) { ballColsCount = 2; stageRemain = 10; }
             else if(stage === 3) { ballColsCount = 3; stageRemain = 12; }
             else {
-                ballColsCount = stage >= 16 ? 4 : 3; // ブロック25個目安はstage16付近
-                if(stage >= 91) ballColsCount = 5; // ブロック100個目安
+                ballColsCount = stage >= 16 ? 4 : 3;
+                if(stage >= 91) ballColsCount = 5;
                 stageRemain = 12 + (stage - 3);
             }
-
             document.getElementById('menuScreen').style.display = 'none';
-            initBoard();
-            gameActive = true;
+            initBoard(); gameActive = true;
         }
 
         function initBoard() {
-            // ボール列の生成
-            const ballArea = document.getElementById('ball-area');
-            ballArea.innerHTML = "";
-            balls = [];
-            for(let i=0; i<ballColsCount; i++) {
-                const col = document.createElement('div');
-                col.className = "ball-column";
-                col.id = `col-${i}`;
-                ballArea.appendChild(col);
-                balls[i] = [];
-                for(let j=0; j<4; j++) addBall(i);
+            const bArea = document.getElementById('ball-area'); bArea.innerHTML = ""; balls = [];
+            for(let i=0; i<ballColsCount; i++){
+                let col = document.createElement('div'); col.className = "ball-column"; col.id = `col-${i}`;
+                bArea.appendChild(col); balls[i] = [];
+                for(let j=0; j<4; j++) addBall(i, false);
             }
-            
-            // スロット
-            const mid = document.getElementById('mid-area');
-            mid.innerHTML = "";
-            midSlots = [];
-            let slotCount = 4 + userData.slotLv;
-            for(let i=0; i<6; i++) {
-                const s = document.createElement('div');
-                s.className = "work-slot" + (i >= slotCount ? " locked" : "");
-                mid.appendChild(s);
-                if(i < slotCount) midSlots.push({ el: s, block: null, filled: 0 });
-            }
-
-            blocks = [];
-            for(let i=0; i<4; i++) addBlock();
-            renderAll();
+            updateSlots();
+            blocks = []; for(let i=0; i<4; i++) addBlock();
+            renderAll(false);
         }
 
-        function addBall(colIdx) {
-            balls[colIdx].push(colors[Math.floor(Math.random() * colors.length)]);
+        function updateSlots() {
+            const mid = document.getElementById('mid-area'); mid.innerHTML = ""; midSlots = [];
+            let totalSlots = 4 + userData.slotLv + tempSlots;
+            for(let i=0; i<7; i++){
+                let s = document.createElement('div'); s.className = "work-slot" + (i >= totalSlots ? " locked" : "");
+                mid.appendChild(s); if(i < totalSlots) midSlots.push({ el: s, block: null, filled: 0 });
+            }
+        }
+
+        function buyTemporarySlot() {
+            if(userData.coins >= 1000 && 4 + userData.slotLv + tempSlots < 7) {
+                userData.coins -= 1000; tempSlots++; updateSlots(); renderAll(false); updateShopUI();
+            }
+        }
+
+        function addBall(colIdx, ani) {
+            let c = colors[Math.floor(Math.random() * colors.length)];
+            balls[colIdx].push({color: c, isNew: ani});
         }
 
         function addBlock() {
-            const size = Math.random() > 0.7 ? 4 : 2;
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            blocks.push({ size, color, id: Date.now() + Math.random() });
+            blocks.push({ size: Math.random() > 0.7 ? 4 : 2, color: colors[Math.floor(Math.random() * colors.length)], id: Math.random() });
         }
 
-        function renderAll() {
-            // ボール描画
-            for(let i=0; i<ballColsCount; i++) {
-                const colEl = document.getElementById(`col-${i}`);
-                colEl.innerHTML = "";
-                balls[i].forEach((c, idx) => {
-                    const b = document.createElement('div');
-                    b.className = "ball";
-                    b.style.background = c;
-                    if(idx === 0) b.onclick = () => selectBall(i);
-                    colEl.appendChild(b);
+        function renderAll(ballAniIdx = null) {
+            for(let i=0; i<ballColsCount; i++){
+                let colEl = document.getElementById(`col-${i}`); colEl.innerHTML = "";
+                balls[i].forEach((bObj, idx) => {
+                    let b = document.createElement('div'); b.className = "ball" + (bObj.isNew && i === ballAniIdx ? " new-drop" : "");
+                    b.style.background = bObj.color; if(idx === 0) b.onclick = () => selectBall(i);
+                    colEl.appendChild(b); bObj.isNew = false;
                 });
             }
-            // ブロック描画
-            const bArea = document.getElementById('bottom-area');
-            const remainLabel = document.getElementById('remain-count');
-            bArea.innerHTML = "";
-            bArea.appendChild(remainLabel);
-            blocks.slice(0, 4).forEach(bl => {
-                const el = document.createElement('div');
-                el.className = "block";
-                if(bl.size === 4) { el.style.width = "70px"; el.style.height = "70px"; }
-                else { el.style.width = "50px"; el.style.height = "50px"; }
+            const bArea = document.getElementById('bottom-area'); bArea.innerHTML = "";
+            blocks.slice(0, 4).forEach((bl, idx) => {
+                let el = document.createElement('div'); el.className = `block size-${bl.size} sliding`;
                 el.style.borderColor = bl.color;
-                for(let i=0; i<bl.size; i++) {
-                    const h = document.createElement('div');
-                    h.className = "hole-spot";
-                    h.style.borderColor = bl.color;
-                    el.appendChild(h);
+                for(let j=0; j<bl.size; j++){
+                    let h = document.createElement('div'); h.className = "hole-spot"; h.style.borderColor = bl.color; el.appendChild(h);
                 }
-                el.onclick = () => selectBlock(bl);
-                bArea.appendChild(el);
+                el.onclick = () => selectBlock(bl); bArea.appendChild(el);
             });
-
-            remainLabel.innerText = "残り: " + stageRemain;
             document.getElementById('ui-stage').innerText = stage;
             document.getElementById('session-coins').innerText = Math.floor(currentSessionCoins);
             checkGameOver();
         }
 
         function selectBlock(bl) {
-            const freeSlot = midSlots.find(s => !s.block);
-            if(!freeSlot) return;
-            freeSlot.block = bl;
-            renderSlot(freeSlot);
+            let slot = midSlots.find(s => !s.block); if(!slot) return;
+            slot.block = bl; renderSlot(slot);
             blocks = blocks.filter(b => b.id !== bl.id);
             if(stageRemain > blocks.length) addBlock();
-            renderAll();
+            renderAll(null);
         }
 
         function renderSlot(slot) {
-            slot.el.innerHTML = "";
-            if(!slot.block) return;
+            slot.el.innerHTML = ""; if(!slot.block) return;
             slot.el.style.borderColor = slot.block.color;
-            for(let i=0; i<slot.block.size; i++) {
-                const h = document.createElement('div');
-                h.className = "hole-spot" + (i < slot.filled ? " filled" : "");
+            for(let i=0; i<slot.block.size; i++){
+                let h = document.createElement('div'); h.className = "hole-spot" + (i < slot.filled ? " filled" : "");
                 if(i < slot.filled) h.style.background = slot.block.color;
                 slot.el.appendChild(h);
             }
         }
 
         function selectBall(colIdx) {
-            const ballColor = balls[colIdx][0];
-            const matchSlot = midSlots.find(s => s.block && s.block.color === ballColor && s.filled < s.block.size);
-            if(matchSlot) {
-                balls[colIdx].shift();
-                addBall(colIdx);
-                matchSlot.filled++;
-                renderSlot(matchSlot);
-                if(matchSlot.filled === matchSlot.block.size) {
-                    currentSessionCoins += (10 + userData.vLv);
+            let color = balls[colIdx][0].color;
+            let slot = midSlots.find(s => s.block && s.block.color === color && s.filled < s.block.size);
+            if(slot) {
+                balls[colIdx].shift(); addBall(colIdx, true);
+                slot.filled++; renderSlot(slot);
+                if(slot.filled === slot.block.size) {
+                    currentSessionCoins += (slot.block.size === 4 ? Math.ceil((10+userData.vLv)*1.35) : (10+userData.vLv));
                     setTimeout(() => {
-                        matchSlot.block = null; matchSlot.filled = 0;
-                        renderSlot(matchSlot);
-                        stageRemain--;
-                        if(stageRemain <= 0 && midSlots.every(s => !s.block)) {
-                            alert("STAGE CLEAR!");
-                            userData.sLv++;
-                            finalizeCoins(1.2);
-                        }
-                        renderAll();
+                        slot.block = null; slot.filled = 0; renderSlot(slot); stageRemain--;
+                        if(stageRemain <= 0 && midSlots.every(s=>!s.block)){ alert("CLEAR!"); userData.sLv++; finalizeCoins(1); }
+                        renderAll(colIdx);
                     }, 150);
-                } else { renderAll(); }
+                } else { renderAll(colIdx); }
             }
         }
 
         function checkGameOver() {
             if(!gameActive) return;
-            const full = midSlots.every(s => s.block);
-            if(full) {
-                const possible = midSlots.some(s => balls.some(col => col[0] === s.block.color));
-                if(!possible) {
-                    alert("詰みました！ゲームオーバー");
-                    finalizeCoins(0.5);
+            if(midSlots.every(s => s.block)) {
+                if(!midSlots.some(s => balls.some(col => col[0].color === s.block.color && s.filled < s.block.size))) {
+                    alert("GAME OVER"); finalizeCoins(0.6);
                 }
             }
         }
 
         function finalizeCoins(rate) {
-            userData.coins += Math.floor(currentSessionCoins * rate);
-            saveData();
-            gameActive = false;
-            if(userData.playCount % 2 === 0) showAd();
-            else document.getElementById('menuScreen').style.display = 'flex';
-            userData.playCount++;
-            updateShopUI();
+            userData.coins += Math.floor(currentSessionCoins * rate); saveData(); gameActive = false;
+            if(userData.playCount % 3 === 0) showAd(); else document.getElementById('menuScreen').style.display = 'flex';
+            userData.playCount++; updateShopUI();
+        }
+
+        function useItem(type) {
+            if(type==='ball' && userData.shB > 0){ userData.shB--; balls.forEach(c=>c.sort(()=>Math.random()-0.5)); }
+            if(type==='block' && userData.shBl > 0){ userData.shBl--; blocks.sort(()=>Math.random()-0.5); }
+            saveData(); renderAll(); updateShopUI();
         }
 
         function showAd() { document.getElementById('interstitial').style.display = 'flex'; }
         function closeAd() { document.getElementById('interstitial').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; }
-
-        function useItem(type) {
-            if(type==='ball' && userData.shB > 0) { userData.shB--; balls.forEach(c => c.sort(() => Math.random() - 0.5)); }
-            if(type==='block' && userData.shBl > 0) { userData.shBl--; blocks.sort(() => Math.random() - 0.5); }
-            saveData(); renderAll(); updateShopUI();
-        }
 
         window.onload = loadData;
     </script>
