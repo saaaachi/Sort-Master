@@ -5,57 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ball Matcher EX</title>
     <style>
+        /* スタイルは第79弾を継承し、ブロックデザインを微調整 */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { background: #0f172a; font-family: sans-serif; overflow: hidden; color: white; position: fixed; width: 100%; height: 100%; }
         
-        /* 広告枠 */
         .ad-fix { position: fixed; left: 0; width: 100%; height: 100px; background: #222; z-index: 9999; overflow: hidden; }
         #ad-top { top: 0; border-bottom: 1px solid #444; } 
         #ad-bottom { bottom: 0; border-top: 1px solid #444; }
 
-        /* ゲームメインエリア */
         #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; display: flex; flex-direction: column; z-index: 10; }
         #stat-bar { height: 35px; background: #000; display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: #facc15; }
         #count-bar { height: 25px; background: #1e293b; display: flex; justify-content: center; align-items: center; font-size: 13px; color: #facc15; border-bottom: 1px solid #334155; font-weight: bold; }
 
-        /* 上段：ボール */
         #ball-area { height: 155px; display: flex; justify-content: center; align-items: flex-end; gap: 12px; padding-bottom: 10px; background: rgba(0,0,0,0.3); }
         .ball-column { display: flex; flex-direction: column-reverse; gap: 5px; width: 42px; align-items: center; min-height: 140px; }
         .ball { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
 
-        /* 中段・下段共通：ブロック枠スタイル */
-        .block-base { width: 52px; height: 52px; border: 1px solid #334155; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; position: relative; }
-        .work-slot { background: #0f172a; }
+        /* 中段・下段共通のブロックデザイン */
+        #mid-area { height: 90px; border-top: 2px solid #475569; border-bottom: 2px solid #475569; display: flex; justify-content: center; align-items: center; gap: 8px; background: #0f172a; }
+        .work-slot, .block { width: 52px; height: 52px; border: 1px solid #334155; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; position: relative; }
+        
         .work-slot.locked { background: #020617; border-style: dashed; opacity: 0.6; }
         .work-slot.locked::after { content: '🔒'; position: absolute; font-size: 18px; opacity: 0.5; }
 
-        /* デザイン統一：下段ブロックも枠線スタイルに */
-        .bottom-block { border: 2px dashed rgba(255,255,255,0.4); cursor: pointer; transition: transform 0.1s; }
-        .bottom-block:active { transform: scale(0.95); }
+        #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; }
+        /* 下段ブロックのホバースタイル解除 */
+        .block { cursor: pointer; background: transparent; transition: transform 0.1s; }
+        .block:active { transform: scale(0.95); }
 
-        #mid-area { height: 90px; border-top: 2px solid #475569; border-bottom: 2px solid #475569; display: flex; justify-content: center; align-items: center; gap: 8px; background: #0f172a; }
-        #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; overflow: hidden; }
+        .hole-spot { width: 18px; height: 18px; border: 1px dashed rgba(255,255,255,0.3); border-radius: 3px; }
+        .filled { border: none; }
 
-        .hole-spot { width: 16px; height: 16px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 3px; }
-        .hole-spot.filled { border: none; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
-
-        /* メニュー・ショップ */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000; display: flex; flex-direction: column; align-items: center; padding: 105px 15px 105px; overflow-y: auto; }
         .shop-card { width: 100%; background: #1e293b; margin: 3px 0; padding: 10px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; min-height: 55px; }
-        .buy-btn { background: #facc15; color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; min-width: 80px; font-size: 13px; }
-        #start-btn { margin-top: 15px; width: 100%; min-height: 60px; border-radius: 30px; border: none; background: #22c55e; color: white; font-size: 20px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        .buy-btn { background: #facc15; color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 13px; }
+        #start-btn { margin-top: 15px; width: 100%; min-height: 60px; border-radius: 30px; border: none; background: #22c55e; color: white; font-size: 20px; font-weight: bold; flex-shrink: 0; }
 
-        /* リザルト・広告 */
         #result-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
         .res-box { background: #1e293b; padding: 30px; border-radius: 20px; border: 2px solid #facc15; width: 85%; text-align: center; }
+
         #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 99999; align-items: center; justify-content: center; }
         .inter-content { width: 95%; height: 80%; background: #fff; border-radius: 15px; position: relative; }
-        .close-x { position: absolute; top: -55px; right: 5px; color: #fff; font-size: 45px; cursor: pointer; padding: 10px; display: none; line-height: 1; }
+        .close-x { position: absolute; top: -55px; right: 5px; color: #fff; font-size: 45px; cursor: pointer; display: none; }
         #ad-timer-text { position: absolute; top: -40px; left: 10px; color: #facc15; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="ad-top" class="ad-fix"><iframe id="frame-top" src="ad.html" style="width:100%; height:100%; border:none;"></iframe></div>
+    <div id="ad-top" class="ad-fix"><iframe id="ifr-top" src="ad.html" style="width:100%; height:100%; border:none;"></iframe></div>
 
     <div id="game-outer">
         <div id="stat-bar">
@@ -101,11 +97,11 @@
         <div id="ad-timer-text">Wait 5s...</div>
         <div class="inter-content">
             <div class="close-x" id="ad-close-btn" onclick="closeLargeAd()">×</div>
-            <iframe src="ad.large.html" style="width:100%; height:100%; border:none;"></iframe>
+            <iframe id="ifr-inter" src="ad.large.html" style="width:100%; height:100%; border:none;"></iframe>
         </div>
     </div>
 
-    <div id="ad-bottom" class="ad-fix"><iframe id="frame-bottom" src="ad.html" style="width:100%; height:100%; border:none;"></iframe></div>
+    <div id="ad-bottom" class="ad-fix"><iframe id="ifr-bottom" src="ad.html" style="width:100%; height:100%; border:none;"></iframe></div>
 
     <script>
         let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
@@ -115,8 +111,8 @@
 
         // 広告30秒リフレッシュ
         setInterval(() => {
-            document.getElementById('frame-top').src = 'ad.html?t=' + Date.now();
-            document.getElementById('frame-bottom').src = 'ad.html?t=' + Date.now();
+            document.getElementById('ifr-top').src = 'ad.html?t=' + Date.now();
+            document.getElementById('ifr-bottom').src = 'ad.html?t=' + Date.now();
         }, 30000);
 
         function load() {
@@ -177,6 +173,9 @@
             let activeColors = colors.slice(0, colorLimit);
 
             totalBallPool = []; blockQueue = [];
+            // 初期化を確実に
+            midSlots = []; blocks = [];
+
             for(let i=0; i<stageTotalCount; i++){
                 let color = activeColors[Math.floor(Math.random() * activeColors.length)];
                 let size = Math.random() > 0.85 ? 4 : 2; 
@@ -195,34 +194,45 @@
                 document.getElementById('ball-area').appendChild(c);
                 balls[i] = []; for(let j=0; j<4; j++) addBall(i);
             }
-            buildSlots();
+            buildSlots(true); // 完全初期化
             blocks = []; for(let i=0; i<4; i++) { if(blockQueue.length > 0) blocks.push(blockQueue.shift()); }
             render();
         }
 
-        function buildSlots() {
-            const mid = document.getElementById('mid-area'); mid.innerHTML = ""; 
-            const oldSlots = [...midSlots];
+        // isNewGameがfalseなら、既存のブロックデータを保持する
+        function buildSlots(isNewGame = false) {
+            const mid = document.getElementById('mid-area'); 
+            const oldData = isNewGame ? [] : midSlots.map(s => ({block: s.block, filled: s.filled}));
+            
+            mid.innerHTML = ""; 
             midSlots = [];
             let totalActive = 4 + userData.slotLv + tempSlots;
+            
             for(let i=0; i<7; i++){
                 let s = document.createElement('div'); 
-                s.className = "block-base work-slot" + (i >= totalActive ? " locked" : "");
+                s.className = "work-slot" + (i >= totalActive ? " locked" : "");
                 mid.appendChild(s); 
+                
+                let slotObj = {el:s, block:null, filled:0};
                 if(i < totalActive) {
-                    // 旧データを保持
-                    let prev = oldSlots[i] || {block:null, filled:0};
-                    midSlots.push({el:s, block:prev.block, filled:prev.filled});
-                    drawSlot(midSlots[i]);
+                    // 救済時は既存のデータを入れ直す
+                    if(!isNewGame && oldData[i]) {
+                        slotObj.block = oldData[i].block;
+                        slotObj.filled = oldData[i].filled;
+                    }
+                    midSlots.push(slotObj);
+                    drawSlot(slotObj);
                 }
             }
         }
 
         function buyTempSlot() {
             if(userData.coins >= 1000 && 4+userData.slotLv+tempSlots < 7) {
-                userData.coins -= 1000; tempSlots++; 
-                buildSlots(); // スロットを増やしつつ現在のブロックを描画
-                render(); updateUI();
+                userData.coins -= 1000; 
+                tempSlots++; 
+                buildSlots(false); // 既存ブロックを消さずに枠を増やす
+                render(); 
+                updateUI();
             }
         }
 
@@ -238,9 +248,7 @@
             }
             const bArea = document.getElementById('bottom-area'); bArea.innerHTML = "";
             blocks.forEach((bl, idx) => {
-                let el = document.createElement('div'); 
-                el.className = "block-base bottom-block"; 
-                el.style.borderColor = bl.c;
+                let el = document.createElement('div'); el.className = `block`; el.style.borderColor = bl.c;
                 for(let j=0; j<4; j++){
                     let h = document.createElement('div'); h.className="hole-spot"; 
                     if(j >= bl.size) h.style.visibility = "hidden"; else h.style.borderColor=bl.c; 
@@ -321,6 +329,7 @@
 
         function showLargeAd() {
             document.getElementById('inter-screen').style.display = 'flex';
+            document.getElementById('ifr-inter').src = 'ad.large.html?t=' + Date.now();
             let closeBtn = document.getElementById('ad-close-btn');
             let timerEl = document.getElementById('ad-timer-text');
             closeBtn.style.display = 'none';
