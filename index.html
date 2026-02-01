@@ -27,13 +27,12 @@
         .work-slot.locked::after { content: "🔒"; font-size: 14px; }
 
         #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; overflow: hidden; }
-        .block { border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); cursor: pointer; display: flex; flex-wrap: wrap; gap: 3px; padding: 5px; justify-content: center; align-content: center; background: rgba(255,255,255,0.05); }
+        .block { width: 62px; height: 62px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-content: center; background: rgba(255,255,255,0.05); }
         .slide-ani { animation: slideLeft 0.3s ease-out; }
         @keyframes slideLeft { from { transform: translateX(50px); } to { transform: translateX(0); } }
         
-        .size-4 { width: 62px; height: 62px; }
-        .size-2 { width: 42px; height: 42px; }
-        .hole-spot { width: 14px; height: 14px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 2px; }
+        /* 2x2 穴デザイン */
+        .hole-spot { width: 18px; height: 18px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 3px; }
         .hole-spot.filled { border: none; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000; display: flex; flex-direction: column; align-items: center; padding-top: 110px; overflow-y: auto; }
@@ -84,35 +83,27 @@
         let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
         let stage = 1, gameActive = false, sessCoins = 0, tempSlots = 0;
         const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7'];
+        
+        // --- 詰み防止用データ ---
+        let totalBallPool = []; // このステージで出す全ボールのリスト
+        let blockQueue = [];    // これから出すブロックのリスト
+
         let balls = [], blocks = [], midSlots = [], stageRem = 0, colCount = 2;
 
         function load() {
-            const saved = localStorage.getItem('ball_matcher_v65');
+            const saved = localStorage.getItem('ball_matcher_v66');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
             updateUI();
         }
-        function save() { localStorage.setItem('ball_matcher_v65', JSON.stringify(userData)); }
+        function save() { localStorage.setItem('ball_matcher_v66', JSON.stringify(userData)); }
 
-        // 指示通りの経済バランス
         function getCost() {
-            let lv = userData.vLv;
-            let price = 10 + lv;
-            if (lv === 0) return 10;
+            let lv = userData.vLv; let price = 10 + lv; if (lv === 0) return 10;
             if (price <= 15) return Math.ceil((80 * Math.pow(1.3, lv)) / 10) * 10;
-            if (price <= 20) {
-                let b6 = Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10;
-                return Math.ceil((b6 * Math.pow(1.2, lv - 5)) / 10) * 10;
-            }
-            if (price <= 35) {
-                let b10 = Math.ceil((Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10 * Math.pow(1.2, 5)) / 10) * 10;
-                return b10 + ((lv - 10) * 500);
-            }
-            if (price <= 50) {
-                let b25 = (Math.ceil((Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10 * Math.pow(1.2, 5)) / 10) * 10) + (15 * 500);
-                return b25 + ((lv - 25) * 800);
-            }
-            let b40 = ((Math.ceil((Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10 * Math.pow(1.2, 5)) / 10) * 10) + (15 * 500)) + (15 * 800);
-            return b40 + ((lv - 40) * 1000);
+            if (price <= 20) { let b6 = Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10; return Math.ceil((b6 * Math.pow(1.2, lv - 5)) / 10) * 10; }
+            if (price <= 35) { let b10 = Math.ceil((Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10 * Math.pow(1.2, 5)) / 10) * 10; return b10 + ((lv - 10) * 500); }
+            if (price <= 50) { let b25 = (Math.ceil((Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10 * Math.pow(1.2, 5)) / 10) * 10) + (15 * 500); return b25 + ((lv - 25) * 800); }
+            let b40 = ((Math.ceil((Math.ceil((80 * Math.pow(1.3, 5)) / 10) * 10 * Math.pow(1.2, 5)) / 10) * 10) + (15 * 500)) + (15 * 800); return b40 + ((lv - 40) * 1000);
         }
 
         function updateUI() {
@@ -122,7 +113,7 @@
             document.getElementById('cost-v').innerText = getCost();
             document.getElementById('adv-shop').style.display = userData.vLv >= 5 ? 'block' : 'none';
             document.getElementById('lv-slot').innerText = userData.slotLv;
-            document.getElementById('cost-slot').innerText = userData.slotLv === 0 ? 3000 : 30000; // 3万に変更
+            document.getElementById('cost-slot').innerText = userData.slotLv === 0 ? 3000 : 30000;
             document.getElementById('count-sh-b').innerText = userData.shB;
             document.getElementById('count-sh-bl').innerText = userData.shBl;
         }
@@ -140,8 +131,20 @@
 
         function startGame() {
             stage = userData.sLv; tempSlots = 0; sessCoins = 0;
-            colCount = stage >= 91 ? 5 : (stage >= 16 ? 4 : (stage >= 3 ? 3 : 2));
+            colCount = stage >= 16 ? 4 : (stage >= 3 ? 3 : 2);
             stageRem = (stage <= 2) ? (stage === 1 ? 5 : 10) : (12 + (stage - 3));
+            
+            // --- ステージ生成：ボールとブロックの数を完全に一致させる ---
+            totalBallPool = [];
+            blockQueue = [];
+            for(let i=0; i<stageRem; i++){
+                let color = colors[Math.floor(Math.random() * colors.length)];
+                let size = Math.random() > 0.7 ? 4 : 2; // 2か4
+                blockQueue.push({size: size, c: color, id: Math.random()});
+                for(let j=0; j<size; j++) totalBallPool.push(color);
+            }
+            totalBallPool.sort(() => Math.random() - 0.5); // ボールをシャッフル
+
             document.getElementById('menuScreen').style.display = 'none';
             init(); gameActive = true;
         }
@@ -153,7 +156,7 @@
                 balls[i] = []; for(let j=0; j<4; j++) addBall(i, false);
             }
             buildSlots();
-            blocks = []; for(let i=0; i<4; i++) addBlock();
+            blocks = []; for(let i=0; i<4; i++) { if(blockQueue.length > 0) blocks.push(blockQueue.shift()); }
             render();
         }
 
@@ -172,17 +175,11 @@
             }
         }
 
-        // 戦略的補充システム：現在スロットにある色を優先的に出す
-        function getSmartColor() {
-            let activeColors = midSlots.filter(s => s.block && s.filled < s.block.size).map(s => s.block.c);
-            if(activeColors.length > 0 && Math.random() > 0.4) {
-                return activeColors[Math.floor(Math.random() * activeColors.length)];
+        function addBall(i, ani) {
+            if(totalBallPool.length > 0) {
+                balls[i].push({c: totalBallPool.shift(), ani: ani});
             }
-            return colors[Math.floor(Math.random() * colors.length)];
         }
-
-        function addBall(i, ani) { balls[i].push({c: getSmartColor(), ani}); }
-        function addBlock() { blocks.push({size: Math.random()>0.7?4:2, c: colors[Math.floor(Math.random()*colors.length)], id: Math.random()}); }
 
         function render(aniCol = null) {
             for(let i=0; i<colCount; i++){
@@ -194,10 +191,14 @@
             }
             const bArea = document.getElementById('bottom-area'); bArea.innerHTML = "";
             blocks.slice(0, 4).forEach((bl, idx) => {
-                let el = document.createElement('div'); el.className = `block size-${bl.size} slide-ani`;
+                let el = document.createElement('div'); el.className = `block slide-ani`;
                 el.style.borderColor = bl.c;
-                for(let j=0; j<bl.size; j++){
-                    let h = document.createElement('div'); h.className="hole-spot"; h.style.borderColor=bl.c; el.appendChild(h);
+                // 全てのブロックを 2x2（4穴）で表示し、サイズ2の場合は2つだけ穴を表示
+                for(let j=0; j<4; j++){
+                    let h = document.createElement('div'); h.className="hole-spot"; 
+                    if(j >= bl.size) h.style.visibility = "hidden"; // サイズ2なら半分隠す
+                    else h.style.borderColor=bl.c; 
+                    el.appendChild(h);
                 }
                 el.onclick = () => selectBlock(bl, idx); bArea.appendChild(el);
             });
@@ -210,7 +211,7 @@
             let slot = midSlots.find(s=>!s.block); if(!slot) return;
             slot.block = bl; drawSlot(slot);
             blocks.splice(idx, 1);
-            if(stageRem > blocks.length) addBlock();
+            if(blockQueue.length > 0) blocks.push(blockQueue.shift());
             render();
         }
 
@@ -224,6 +225,7 @@
         }
 
         function selectBall(i) {
+            if(balls[i].length === 0) return;
             let color = balls[i][0].c;
             let slot = midSlots.find(s => s.block && s.block.c === color && s.filled < s.block.size);
             if(slot) {
@@ -243,7 +245,8 @@
 
         function checkOver() {
             if(gameActive && midSlots.every(s=>s.block)) {
-                if(!midSlots.some(s => balls.some(c => c[0].c === s.block.c))) {
+                // スロットが全部埋まっていて、かつどの列の先頭ボールもスロットの色と一致しない場合
+                if(!midSlots.some(s => balls.some(c => c.length > 0 && c[0].c === s.block.c))) {
                     alert("GAME OVER"); end(0.6);
                 }
             }
