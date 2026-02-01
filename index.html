@@ -108,15 +108,15 @@
     <script>
         let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
         let stage = 1, gameActive = false, sessCoins = 0, tempSlots = 0;
-        const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7']; // 赤,青,緑,黄,紫
-        let balls = [], blocks = [], midSlots = [], blockQueue = [], totalBallPool = [], stageRem = 0, colCount = 2;
+        const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7']; 
+        let balls = [], blocks = [], midSlots = [], blockQueue = [], totalBallPool = [], stageTotalCount = 0, colCount = 2;
 
         function load() {
-            const saved = localStorage.getItem('ball_matcher_v78');
+            const saved = localStorage.getItem('ball_matcher_v79');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
             updateUI();
         }
-        function save() { localStorage.setItem('ball_matcher_v78', JSON.stringify(userData)); }
+        function save() { localStorage.setItem('ball_matcher_v79', JSON.stringify(userData)); }
 
         function getCurrentUnitValue() { return 10 + userData.vLv; }
 
@@ -164,15 +164,14 @@
             stage = userData.sLv; tempSlots = 0; sessCoins = 0;
             colCount = stage >= 16 ? 4 : (stage >= 3 ? 3 : 2);
             
-            // ステージ1=5個, 3=7個, 15=19個
-            stageRem = 5 + (stage - 1);
+            // ブロックの総数：ステージ1=5, 3=7, 15=19
+            stageTotalCount = 5 + (stage - 1);
             
-            // 紫色はステージ20から
             let colorLimit = stage < 5 ? 3 : (stage < 20 ? 4 : 5);
             let activeColors = colors.slice(0, colorLimit);
 
             totalBallPool = []; blockQueue = [];
-            for(let i=0; i<stageRem; i++){
+            for(let i=0; i<stageTotalCount; i++){
                 let color = activeColors[Math.floor(Math.random() * activeColors.length)];
                 let size = Math.random() > 0.85 ? 4 : 2; 
                 blockQueue.push({size: size, c: color});
@@ -235,7 +234,8 @@
             });
             document.getElementById('ui-stage').innerText = stage;
             document.getElementById('session-coins').innerText = Math.floor(sessCoins);
-            document.getElementById('rem-count').innerText = stageRem + blocks.length + blockQueue.length;
+            // 残数表示を「消えていない総数」に
+            document.getElementById('rem-count').innerText = stageTotalCount;
             checkOver();
         }
 
@@ -267,8 +267,10 @@
                     let base = getCurrentUnitValue();
                     sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base);
                     setTimeout(() => {
-                        slot.block = null; slot.filled = 0; drawSlot(slot); stageRem--;
-                        if(stageRem <= 0 && midSlots.every(s=>!s.block)){ userData.sLv++; showResult(true); }
+                        slot.block = null; slot.filled = 0; drawSlot(slot); 
+                        // ★ここが修正ポイント！ブロックが完全に揃って消えた時だけ「残り」を減らす
+                        stageTotalCount--; 
+                        if(stageTotalCount <= 0){ userData.sLv++; showResult(true); }
                         render();
                     }, 100);
                 } else { render(); }
@@ -294,7 +296,6 @@
 
         function handleResultOK() {
             document.getElementById('result-screen').style.display = 'none';
-            // 初回2回目、以降5回おき(2, 3, 8, 13...)に大広告
             if(userData.playCount === 2 || (userData.playCount > 2 && (userData.playCount - 3) % 5 === 0)) {
                 showLargeAd();
             } else {
