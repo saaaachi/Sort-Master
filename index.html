@@ -8,7 +8,6 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { background: #0f172a; font-family: sans-serif; overflow: hidden; color: white; position: fixed; width: 100%; height: 100%; }
         
-        /* 広告エリア */
         .ad-fix { position: fixed; left: 0; width: 100%; height: 100px; background: #222; z-index: 9999; overflow: hidden; }
         #ad-top { top: 0; border-bottom: 1px solid #444; } 
         #ad-bottom { bottom: 0; border-top: 1px solid #444; }
@@ -21,37 +20,31 @@
         .ball-column { display: flex; flex-direction: column-reverse; gap: 5px; width: 42px; align-items: center; min-height: 140px; }
         .ball { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
 
-        /* 中段スロット */
         #mid-area { height: 90px; border-top: 2px solid #475569; border-bottom: 2px solid #475569; display: flex; justify-content: center; align-items: center; gap: 8px; background: #0f172a; }
         .work-slot { width: 52px; height: 52px; border: 1px solid #334155; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; position: relative; }
         .work-slot.locked { background: #020617; border-style: dashed; opacity: 0.6; }
         .work-slot.locked::after { content: '🔒'; position: absolute; font-size: 18px; opacity: 0.5; }
 
-        /* 下段ブロック */
         #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; overflow: hidden; }
         .block { 
             width: 62px; height: 62px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); 
             display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-content: center;
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+            transition: transform 0.2s;
         }
         .hole-spot { width: 18px; height: 18px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 3px; }
         .hole-spot.filled { border: none; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
 
-        /* ショップ画面 */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000; display: flex; flex-direction: column; align-items: center; padding: 105px 15px 105px; overflow-y: auto; }
         .shop-card { width: 100%; background: #1e293b; margin: 3px 0; padding: 10px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; min-height: 55px; }
         .buy-btn { background: #facc15; color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; min-width: 80px; font-size: 13px; }
         #start-btn { margin-top: 15px; width: 100%; min-height: 60px; border-radius: 30px; border: none; background: #22c55e; color: white; font-size: 20px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
 
-        /* リザルト */
         #result-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
         .res-box { background: #1e293b; padding: 30px; border-radius: 20px; border: 2px solid #facc15; width: 85%; text-align: center; }
 
-        /* 大広告 */
         #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; align-items: center; justify-content: center; }
         .inter-content { width: 95%; height: 80%; background: #fff; border-radius: 15px; position: relative; }
         .close-x { position: absolute; top: -50px; right: 0; color: #fff; font-size: 40px; cursor: pointer; padding: 10px; display: none; }
-        #ad-timer { position: absolute; top: -40px; left: 10px; color: #facc15; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -91,45 +84,33 @@
     <div id="result-screen">
         <div class="res-box">
             <h1 id="res-title">CLEAR!</h1>
-            <p style="font-size:18px;">獲得スコア: <span id="res-score">0</span></p>
-            <p style="font-size:18px; margin-bottom:20px;">獲得コイン: 💰<span id="res-coins">0</span></p>
-            <button onclick="closeResult()" style="padding:15px 40px; border-radius:10px; border:none; background:#3b82f6; color:white; font-weight:bold; cursor:pointer;">OK</button>
+            <p id="res-bonus-text" style="color:#facc15; font-weight:bold;"></p>
+            <p style="font-size:18px;">獲得コイン: 💰<span id="res-coins">0</span></p>
+            <button onclick="closeResult()" style="margin-top:20px; padding:15px 40px; border-radius:10px; border:none; background:#3b82f6; color:white; font-weight:bold; cursor:pointer;">OK</button>
         </div>
     </div>
 
     <div id="inter-screen">
-        <div id="ad-timer">Wait 5s...</div>
-        <div class="inter-content">
-            <div class="close-x" id="ad-close-btn" onclick="closeLargeAd()">×</div>
-            <iframe src="ad.large.html"></iframe>
-        </div>
+        <div class="inter-content"><div class="close-x" id="ad-close-btn" onclick="closeLargeAd()">×</div><iframe src="ad.large.html"></iframe></div>
     </div>
 
     <div id="ad-bottom" class="ad-fix"><iframe id="frame-bottom" src="ad.html"></iframe></div>
 
     <script>
         let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
-        let stage = 1, gameActive = false, sessCoins = 0, tempSlots = 0, currentScore = 0;
+        let stage = 1, gameActive = false, sessCoins = 0, tempSlots = 0;
         const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7'];
         let totalBallPool = [], blockQueue = [], balls = [], blocks = [], midSlots = [], stageRem = 0, colCount = 2;
 
         function load() {
-            const saved = localStorage.getItem('ball_matcher_v71');
+            const saved = localStorage.getItem('ball_matcher_v72');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
             updateUI();
-            setInterval(() => {
-                document.getElementById('frame-top').src = "ad.html?t=" + Date.now();
-                document.getElementById('frame-bottom').src = "ad.html?t=" + Date.now();
-            }, 30000);
         }
-        function save() { localStorage.setItem('ball_matcher_v71', JSON.stringify(userData)); }
+        function save() { localStorage.setItem('ball_matcher_v72', JSON.stringify(userData)); }
 
-        // 単価計算（10 + レベル）
         function getCurrentUnitValue() { return 10 + userData.vLv; }
-        function getCost() {
-            let lv = userData.vLv;
-            return lv === 0 ? 10 : Math.ceil((50 * Math.pow(1.35, lv)) / 10) * 10;
-        }
+        function getCost() { return Math.ceil((50 * Math.pow(1.35, userData.vLv)) / 10) * 10; }
 
         function updateUI() {
             document.getElementById('shop-coins').innerText = Math.floor(userData.coins);
@@ -156,14 +137,14 @@
         }
 
         function startGame() {
-            stage = userData.sLv; tempSlots = 0; sessCoins = 0; currentScore = 0;
+            stage = userData.sLv; tempSlots = 0; sessCoins = 0;
             colCount = stage >= 16 ? 4 : (stage >= 3 ? 3 : 2);
             stageRem = (stage <= 2) ? (stage === 1 ? 5 : 10) : (12 + (stage - 3));
             totalBallPool = []; blockQueue = [];
             for(let i=0; i<stageRem; i++){
                 let color = colors[Math.floor(Math.random() * colors.length)];
                 let size = Math.random() > 0.7 ? 4 : 2;
-                blockQueue.push({size: size, c: color, id: Math.random()});
+                blockQueue.push({size: size, c: color});
                 for(let j=0; j<size; j++) totalBallPool.push(color);
             }
             totalBallPool.sort(() => Math.random() - 0.5);
@@ -172,9 +153,10 @@
         }
 
         function init() {
-            const bArea = document.getElementById('ball-area'); bArea.innerHTML = ""; balls = [];
+            document.getElementById('ball-area').innerHTML = ""; balls = [];
             for(let i=0; i<colCount; i++){
-                let c = document.createElement('div'); c.className="ball-column"; c.id=`col-${i}`; bArea.appendChild(c);
+                let c = document.createElement('div'); c.className="ball-column"; c.id=`col-${i}`; 
+                document.getElementById('ball-area').appendChild(c);
                 balls[i] = []; for(let j=0; j<4; j++) addBall(i);
             }
             buildSlots();
@@ -199,9 +181,7 @@
             }
         }
 
-        function addBall(i) {
-            if(totalBallPool.length > 0) balls[i].push({c: totalBallPool.shift()});
-        }
+        function addBall(i) { if(totalBallPool.length > 0) balls[i].push({c: totalBallPool.shift()}); }
 
         function render() {
             for(let i=0; i<colCount; i++){
@@ -230,14 +210,9 @@
         function selectBlock(bl, idx) {
             let slot = midSlots.find(s=>!s.block); if(!slot) return;
             slot.block = bl; drawSlot(slot);
-            const blockEls = document.querySelectorAll('.block');
-            blockEls[idx].style.opacity = "0";
-            blockEls[idx].style.transform = "scale(0.5)";
-            setTimeout(() => {
-                blocks.splice(idx, 1);
-                if(blockQueue.length > 0) blocks.push(blockQueue.shift());
-                render();
-            }, 100);
+            blocks.splice(idx, 1);
+            if(blockQueue.length > 0) blocks.push(blockQueue.shift());
+            render();
         }
 
         function drawSlot(s) {
@@ -257,14 +232,14 @@
                 balls[i].shift(); addBall(i);
                 slot.filled++; drawSlot(slot);
                 if(slot.filled === slot.block.size) {
+                    // ★修正：純粋に単価分のみ加算（ボーナスはクリア時へ）
                     let base = getCurrentUnitValue();
-                    sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base) + (stage * 2);
-                    currentScore += 100;
+                    sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base);
                     setTimeout(() => {
                         slot.block = null; slot.filled = 0; drawSlot(slot); stageRem--;
                         if(stageRem <= 0 && midSlots.every(s=>!s.block)){ userData.sLv++; showResult(true); }
                         render();
-                    }, 150);
+                    }, 100);
                 } else { render(); }
             }
         }
@@ -277,45 +252,25 @@
 
         function showResult(isClear) {
             gameActive = false;
-            let finalCoins = Math.floor(sessCoins * (isClear ? 1.0 : 0.6));
+            let bonus = isClear ? (stage * 10) : 0; // ★ステージクリアボーナス
+            let finalCoins = Math.floor(sessCoins * (isClear ? 1.0 : 0.6)) + bonus;
             userData.coins += finalCoins;
             userData.playCount++;
             save();
             document.getElementById('res-title').innerText = isClear ? "STAGE CLEAR!" : "GAME OVER";
+            document.getElementById('res-bonus-text').innerText = isClear ? `Bonus: +${bonus}💰` : "";
             document.getElementById('res-coins').innerText = finalCoins;
-            document.getElementById('res-score').innerText = currentScore;
             document.getElementById('result-screen').style.display = 'flex';
         }
 
         function closeResult() {
             document.getElementById('result-screen').style.display = 'none';
-            if(userData.playCount === 1 || userData.playCount === 2 || (userData.playCount > 2 && (userData.playCount - 2) % 5 === 0)) {
-                showLargeAd();
-            } else { document.getElementById('menuScreen').style.display='flex'; }
+            if(userData.playCount % 3 === 0) showLargeAd(); else document.getElementById('menuScreen').style.display='flex';
             updateUI();
         }
 
-        function showLargeAd() {
-            document.getElementById('inter-screen').style.display = 'flex';
-            let timerEl = document.getElementById('ad-timer');
-            let closeBtn = document.getElementById('ad-close-btn');
-            closeBtn.style.display = 'none';
-            let sec = 5;
-            timerEl.innerText = `Wait ${sec}s...`;
-            let interval = setInterval(() => {
-                sec--;
-                if(sec <= 0) {
-                    clearInterval(interval);
-                    timerEl.innerText = "Ready!";
-                    closeBtn.style.display = 'block';
-                } else { timerEl.innerText = `Wait ${sec}s...`; }
-            }, 1000);
-        }
-
-        function closeLargeAd() {
-            document.getElementById('inter-screen').style.display = 'none';
-            document.getElementById('menuScreen').style.display = 'flex';
-        }
+        function showLargeAd() { document.getElementById('inter-screen').style.display = 'flex'; setTimeout(()=>{document.getElementById('ad-close-btn').style.display='block';},2000); }
+        function closeLargeAd() { document.getElementById('inter-screen').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; }
 
         function useItem(type) {
             if(type==='ball' && userData.shB > 0){ userData.shB--; balls.forEach(c=>c.sort(()=>Math.random()-0.5)); }
