@@ -20,25 +20,24 @@
         .ball-column { display: flex; flex-direction: column-reverse; gap: 5px; width: 42px; align-items: center; min-height: 140px; }
         .ball { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
 
+        /* 中段スロットのロック表示を強化 */
         #mid-area { height: 90px; border-top: 2px solid #475569; border-bottom: 2px solid #475569; display: flex; justify-content: center; align-items: center; gap: 8px; background: #0f172a; }
-        .work-slot { width: 52px; height: 52px; border: 1px solid #334155; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; }
+        .work-slot { width: 52px; height: 52px; border: 1px solid #334155; border-radius: 8px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 4px; position: relative; }
+        .work-slot.locked { background: #020617; border-style: dashed; opacity: 0.6; }
+        .work-slot.locked::after { content: '🔒'; position: absolute; font-size: 18px; opacity: 0.5; }
 
-        #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; overflow: hidden; position: relative; }
-        
-        /* ブロックのスライド演出 */
+        #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; overflow: hidden; }
         .block { 
             width: 62px; height: 62px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); 
             display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-content: center;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
         }
         .hole-spot { width: 18px; height: 18px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 3px; }
         .hole-spot.filled { border: none; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
 
-        /* ショップUI微調整（縦幅を詰める） */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000; display: flex; flex-direction: column; align-items: center; padding: 105px 15px 105px; overflow-y: auto; }
         .shop-card { width: 100%; background: #1e293b; margin: 3px 0; padding: 10px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; min-height: 55px; }
         .buy-btn { background: #facc15; color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; min-width: 80px; font-size: 13px; }
-
         #start-btn { margin-top: 15px; width: 100%; min-height: 60px; border-radius: 30px; border: none; background: #22c55e; color: white; font-size: 20px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
 
         #result-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
@@ -72,15 +71,12 @@
     <div id="menuScreen" class="overlay">
         <h2 style="color:#facc15; margin-bottom:5px;">Ball Matcher EX</h2>
         <div style="font-size:22px; margin-bottom:10px;">💰 <span id="shop-coins">0</span></div>
-        
         <div class="shop-card"><div>💎 単価 Lv.<span id="lv-v">0</span></div><button class="buy-btn" onclick="buy('value')">💰 <span id="cost-v">0</span></button></div>
-        
         <div id="adv-shop" style="display:none; width:100%;">
             <div class="shop-card"><div>➕ 永続枠追加 (<span id="lv-slot">0</span>/2)</div><button class="buy-btn" onclick="buy('slot')">💰 <span id="cost-slot">0</span></button></div>
             <div class="shop-card"><div>🔀 上段シャッフル</div><button class="buy-btn" onclick="buy('sh-b')">💰 500</button></div>
             <div class="shop-card"><div>🔀 下段シャッフル</div><button class="buy-btn" onclick="buy('sh-bl')">💰 1000</button></div>
         </div>
-        
         <button id="start-btn" onclick="startGame()">START</button>
     </div>
 
@@ -110,7 +106,7 @@
         let totalBallPool = [], blockQueue = [], balls = [], blocks = [], midSlots = [], stageRem = 0, colCount = 2;
 
         function load() {
-            const saved = localStorage.getItem('ball_matcher_v69');
+            const saved = localStorage.getItem('ball_matcher_v70');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
             updateUI();
             setInterval(() => {
@@ -118,7 +114,7 @@
                 document.getElementById('frame-bottom').src = "ad.html?t=" + Date.now();
             }, 30000);
         }
-        function save() { localStorage.setItem('ball_matcher_v69', JSON.stringify(userData)); }
+        function save() { localStorage.setItem('ball_matcher_v70', JSON.stringify(userData)); }
 
         function getCost() {
             let lv = userData.vLv;
@@ -177,10 +173,12 @@
 
         function buildSlots() {
             const mid = document.getElementById('mid-area'); mid.innerHTML = ""; midSlots = [];
-            let total = 4 + userData.slotLv + tempSlots;
+            let totalActive = 4 + userData.slotLv + tempSlots;
             for(let i=0; i<7; i++){
-                let s = document.createElement('div'); s.className="work-slot"+(i>=total?" locked":"");
-                mid.appendChild(s); if(i<total) midSlots.push({el:s, block:null, filled:0});
+                let s = document.createElement('div'); 
+                s.className = "work-slot" + (i >= totalActive ? " locked" : "");
+                mid.appendChild(s); 
+                if(i < totalActive) midSlots.push({el:s, block:null, filled:0});
             }
         }
 
@@ -195,7 +193,6 @@
         }
 
         function render() {
-            // ボール描画
             for(let i=0; i<colCount; i++){
                 let el = document.getElementById(`col-${i}`); el.innerHTML = "";
                 balls[i].forEach((b, idx) => {
@@ -203,11 +200,9 @@
                     if(idx===0) d.onclick = () => selectBall(i); el.appendChild(d);
                 });
             }
-            // ブロック描画（スライド演出込）
             const bArea = document.getElementById('bottom-area'); bArea.innerHTML = "";
             blocks.forEach((bl, idx) => {
-                let el = document.createElement('div'); el.className = `block`;
-                el.style.borderColor = bl.c;
+                let el = document.createElement('div'); el.className = `block`; el.style.borderColor = bl.c;
                 for(let j=0; j<4; j++){
                     let h = document.createElement('div'); h.className="hole-spot"; 
                     if(j >= bl.size) h.style.visibility = "hidden"; else h.style.borderColor=bl.c; 
@@ -224,17 +219,14 @@
         function selectBlock(bl, idx) {
             let slot = midSlots.find(s=>!s.block); if(!slot) return;
             slot.block = bl; drawSlot(slot);
-            
-            // 選択したブロックを即座に消し、右側のブロックが詰めるアニメーション
             const blockEls = document.querySelectorAll('.block');
             blockEls[idx].style.opacity = "0";
             blockEls[idx].style.transform = "scale(0.5)";
-
             setTimeout(() => {
                 blocks.splice(idx, 1);
                 if(blockQueue.length > 0) blocks.push(blockQueue.shift());
                 render();
-            }, 150);
+            }, 100);
         }
 
         function drawSlot(s) {
@@ -274,8 +266,7 @@
 
         function showResult(isClear) {
             gameActive = false;
-            let rate = isClear ? 1.0 : 0.6;
-            let finalCoins = Math.floor(sessCoins * rate);
+            let finalCoins = Math.floor(sessCoins * (isClear ? 1.0 : 0.6));
             userData.coins += finalCoins;
             userData.playCount++;
             save();
@@ -289,9 +280,7 @@
             document.getElementById('result-screen').style.display = 'none';
             if(userData.playCount === 1 || userData.playCount === 2 || (userData.playCount > 2 && (userData.playCount - 2) % 5 === 0)) {
                 showLargeAd();
-            } else {
-                document.getElementById('menuScreen').style.display='flex';
-            }
+            } else { document.getElementById('menuScreen').style.display='flex'; }
             updateUI();
         }
 
