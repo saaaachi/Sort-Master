@@ -11,7 +11,6 @@
         .ad-fix { position: fixed; left: 0; width: 100%; height: 100px; background: #222; z-index: 9999; overflow: hidden; }
         #ad-top { top: 0; border-bottom: 1px solid #444; } 
         #ad-bottom { bottom: 0; border-top: 1px solid #444; }
-        iframe { width: 100%; height: 100%; border: none; }
 
         #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; display: flex; flex-direction: column; z-index: 10; }
         #stat-bar { height: 35px; background: #000; display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: #facc15; }
@@ -26,11 +25,7 @@
         .work-slot.locked::after { content: '🔒'; position: absolute; font-size: 18px; opacity: 0.5; }
 
         #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; overflow: hidden; }
-        .block { 
-            width: 62px; height: 62px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); 
-            display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-content: center;
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
-        }
+        .block { width: 62px; height: 62px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-content: center; transition: transform 0.2s, opacity 0.2s; }
         .hole-spot { width: 18px; height: 18px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 3px; }
         .hole-spot.filled { border: none; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
 
@@ -42,13 +37,14 @@
         #result-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.95); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
         .res-box { background: #1e293b; padding: 30px; border-radius: 20px; border: 2px solid #facc15; width: 85%; text-align: center; }
 
-        #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; align-items: center; justify-content: center; }
+        #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 99999; align-items: center; justify-content: center; }
         .inter-content { width: 95%; height: 80%; background: #fff; border-radius: 15px; position: relative; }
-        .close-x { position: absolute; top: -50px; right: 0; color: #fff; font-size: 40px; cursor: pointer; padding: 10px; display: none; }
+        .close-x { position: absolute; top: -55px; right: 5px; color: #fff; font-size: 45px; cursor: pointer; padding: 10px; display: none; line-height: 1; }
+        #ad-timer-text { position: absolute; top: -40px; left: 10px; color: #facc15; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="ad-top" class="ad-fix"><iframe id="frame-top" src="ad.html"></iframe></div>
+    <div id="ad-top" class="ad-fix"><iframe src="ad.html" style="width:100%; height:100%; border:none;"></iframe></div>
 
     <div id="game-outer">
         <div id="stat-bar">
@@ -85,48 +81,56 @@
         <div class="res-box">
             <h1 id="res-title">CLEAR!</h1>
             <p style="font-size:18px; margin-top:10px;">獲得コイン: 💰<span id="res-coins">0</span></p>
-            <button onclick="closeResult()" style="margin-top:20px; padding:15px 40px; border-radius:10px; border:none; background:#3b82f6; color:white; font-weight:bold; cursor:pointer;">OK</button>
+            <button onclick="handleResultOK()" style="margin-top:20px; padding:15px 40px; border-radius:10px; border:none; background:#3b82f6; color:white; font-weight:bold; cursor:pointer;">OK</button>
         </div>
     </div>
 
     <div id="inter-screen">
-        <div class="inter-content"><div class="close-x" id="ad-close-btn" onclick="closeLargeAd()">×</div><iframe src="ad.large.html"></iframe></div>
+        <div id="ad-timer-text">Wait 5s...</div>
+        <div class="inter-content">
+            <div class="close-x" id="ad-close-btn" onclick="closeLargeAd()">×</div>
+            <iframe src="ad.large.html" style="width:100%; height:100%; border:none;"></iframe>
+        </div>
     </div>
 
-    <div id="ad-bottom" class="ad-fix"><iframe id="frame-bottom" src="ad.html"></iframe></div>
+    <div id="ad-bottom" class="ad-fix"><iframe src="ad.html" style="width:100%; height:100%; border:none;"></iframe></div>
 
     <script>
         let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
         let stage = 1, gameActive = false, sessCoins = 0, tempSlots = 0;
         const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7'];
-        let totalBallPool = [], blockQueue = [], balls = [], blocks = [], midSlots = [], stageRem = 0, colCount = 2;
+        let balls = [], blocks = [], midSlots = [], blockQueue = [], totalBallPool = [], stageRem = 0, colCount = 2;
 
         function load() {
-            const saved = localStorage.getItem('ball_matcher_v73');
+            const saved = localStorage.getItem('ball_matcher_v75');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
             updateUI();
         }
-        function save() { localStorage.setItem('ball_matcher_v73', JSON.stringify(userData)); }
+        function save() { localStorage.setItem('ball_matcher_v75', JSON.stringify(userData)); }
 
         function getCurrentUnitValue() { return 10 + userData.vLv; }
 
-        // ご指定の購入金額ロジック
         function getCost() {
             let lv = userData.vLv;
             if (lv === 0) return 10;
             if (lv === 1) return 80;
             
-            // 過去のコストをシミュレートして計算
-            let currentCost = 80;
+            let cost = 80;
             for (let i = 2; i <= lv; i++) {
-                let unit = 10 + (i - 1); // 1つ前の単価
-                if (unit >= 12 && unit <= 15) currentCost *= 1.88;
-                else if (unit >= 16 && unit <= 20) currentCost *= 1.2;
-                else if (unit >= 21 && unit <= 35) currentCost += 500;
-                else if (unit >= 36 && unit <= 50) currentCost += 800;
-                else if (unit >= 51) currentCost += 1000;
+                let unitValueAtThatTime = 10 + (i - 1); // 1段階前の単価
+                if (unitValueAtThatTime >= 12 && unitValueAtThatTime <= 15) {
+                    cost = Math.ceil(cost * 1.75 / 10) * 10; // 1.75倍して10の位で切り上げ
+                } else if (unitValueAtThatTime >= 16 && unitValueAtThatTime <= 20) {
+                    cost = Math.ceil(cost * 1.2 / 10) * 10;
+                } else if (unitValueAtThatTime >= 21 && unitValueAtThatTime <= 35) {
+                    cost += 500;
+                } else if (unitValueAtThatTime >= 36 && unitValueAtThatTime <= 50) {
+                    cost += 800;
+                } else if (unitValueAtThatTime >= 51) {
+                    cost += 1000;
+                }
             }
-            return Math.ceil(currentCost / 10) * 10;
+            return cost;
         }
 
         function updateUI() {
@@ -268,7 +272,6 @@
 
         function showResult(isClear) {
             gameActive = false;
-            // ボーナスコインなし。純粋にセッションコイン×倍率のみ。
             let finalCoins = Math.floor(sessCoins * (isClear ? 1.0 : 0.6));
             userData.coins += finalCoins;
             userData.playCount++;
@@ -278,14 +281,39 @@
             document.getElementById('result-screen').style.display = 'flex';
         }
 
-        function closeResult() {
+        function handleResultOK() {
             document.getElementById('result-screen').style.display = 'none';
-            if(userData.playCount % 3 === 0) showLargeAd(); else document.getElementById('menuScreen').style.display='flex';
+            if(userData.playCount === 2 || (userData.playCount > 2 && (userData.playCount - 3) % 5 === 0)) {
+                showLargeAd();
+            } else {
+                document.getElementById('menuScreen').style.display = 'flex';
+            }
             updateUI();
         }
 
-        function showLargeAd() { document.getElementById('inter-screen').style.display = 'flex'; setTimeout(()=>{document.getElementById('ad-close-btn').style.display='block';},2000); }
-        function closeLargeAd() { document.getElementById('inter-screen').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; }
+        function showLargeAd() {
+            document.getElementById('inter-screen').style.display = 'flex';
+            let closeBtn = document.getElementById('ad-close-btn');
+            let timerEl = document.getElementById('ad-timer-text');
+            closeBtn.style.display = 'none';
+            let sec = 5;
+            timerEl.innerText = `Wait ${sec}s...`;
+            let timer = setInterval(() => {
+                sec--;
+                if(sec <= 0) {
+                    clearInterval(timer);
+                    timerEl.innerText = "Ready!";
+                    closeBtn.style.display = 'block';
+                } else {
+                    timerEl.innerText = `Wait ${sec}s...`;
+                }
+            }, 1000);
+        }
+
+        function closeLargeAd() {
+            document.getElementById('inter-screen').style.display = 'none';
+            document.getElementById('menuScreen').style.display = 'flex';
+        }
 
         function useItem(type) {
             if(type==='ball' && userData.shB > 0){ userData.shB--; balls.forEach(c=>c.sort(()=>Math.random()-0.5)); }
