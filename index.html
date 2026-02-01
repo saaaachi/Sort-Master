@@ -29,7 +29,7 @@
         .block { 
             width: 62px; height: 62px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); 
             display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-content: center;
-            transition: transform 0.2s;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
         }
         .hole-spot { width: 18px; height: 18px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 3px; }
         .hole-spot.filled { border: none; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
@@ -84,8 +84,7 @@
     <div id="result-screen">
         <div class="res-box">
             <h1 id="res-title">CLEAR!</h1>
-            <p id="res-bonus-text" style="color:#facc15; font-weight:bold;"></p>
-            <p style="font-size:18px;">獲得コイン: 💰<span id="res-coins">0</span></p>
+            <p style="font-size:18px; margin-top:10px;">獲得コイン: 💰<span id="res-coins">0</span></p>
             <button onclick="closeResult()" style="margin-top:20px; padding:15px 40px; border-radius:10px; border:none; background:#3b82f6; color:white; font-weight:bold; cursor:pointer;">OK</button>
         </div>
     </div>
@@ -103,14 +102,32 @@
         let totalBallPool = [], blockQueue = [], balls = [], blocks = [], midSlots = [], stageRem = 0, colCount = 2;
 
         function load() {
-            const saved = localStorage.getItem('ball_matcher_v72');
+            const saved = localStorage.getItem('ball_matcher_v73');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
             updateUI();
         }
-        function save() { localStorage.setItem('ball_matcher_v72', JSON.stringify(userData)); }
+        function save() { localStorage.setItem('ball_matcher_v73', JSON.stringify(userData)); }
 
         function getCurrentUnitValue() { return 10 + userData.vLv; }
-        function getCost() { return Math.ceil((50 * Math.pow(1.35, userData.vLv)) / 10) * 10; }
+
+        // ご指定の購入金額ロジック
+        function getCost() {
+            let lv = userData.vLv;
+            if (lv === 0) return 10;
+            if (lv === 1) return 80;
+            
+            // 過去のコストをシミュレートして計算
+            let currentCost = 80;
+            for (let i = 2; i <= lv; i++) {
+                let unit = 10 + (i - 1); // 1つ前の単価
+                if (unit >= 12 && unit <= 15) currentCost *= 1.88;
+                else if (unit >= 16 && unit <= 20) currentCost *= 1.2;
+                else if (unit >= 21 && unit <= 35) currentCost += 500;
+                else if (unit >= 36 && unit <= 50) currentCost += 800;
+                else if (unit >= 51) currentCost += 1000;
+            }
+            return Math.ceil(currentCost / 10) * 10;
+        }
 
         function updateUI() {
             document.getElementById('shop-coins').innerText = Math.floor(userData.coins);
@@ -232,7 +249,6 @@
                 balls[i].shift(); addBall(i);
                 slot.filled++; drawSlot(slot);
                 if(slot.filled === slot.block.size) {
-                    // ★修正：純粋に単価分のみ加算（ボーナスはクリア時へ）
                     let base = getCurrentUnitValue();
                     sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base);
                     setTimeout(() => {
@@ -252,13 +268,12 @@
 
         function showResult(isClear) {
             gameActive = false;
-            let bonus = isClear ? (stage * 10) : 0; // ★ステージクリアボーナス
-            let finalCoins = Math.floor(sessCoins * (isClear ? 1.0 : 0.6)) + bonus;
+            // ボーナスコインなし。純粋にセッションコイン×倍率のみ。
+            let finalCoins = Math.floor(sessCoins * (isClear ? 1.0 : 0.6));
             userData.coins += finalCoins;
             userData.playCount++;
             save();
             document.getElementById('res-title').innerText = isClear ? "STAGE CLEAR!" : "GAME OVER";
-            document.getElementById('res-bonus-text').innerText = isClear ? `Bonus: +${bonus}💰` : "";
             document.getElementById('res-coins').innerText = finalCoins;
             document.getElementById('result-screen').style.display = 'flex';
         }
