@@ -15,8 +15,7 @@
         #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; display: flex; flex-direction: column; z-index: 10; }
         #stat-bar { height: 35px; background: #000; display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: #facc15; }
 
-        /* 残り個数表示用のエリア */
-        #count-bar { height: 25px; background: #1e293b; display: flex; justify-content: center; align-items: center; font-size: 12px; color: #94a3b8; border-bottom: 1px solid #334155; }
+        #count-bar { height: 25px; background: #1e293b; display: flex; justify-content: center; align-items: center; font-size: 13px; color: #facc15; border-bottom: 1px solid #334155; font-weight: bold; }
 
         #ball-area { height: 155px; display: flex; justify-content: center; align-items: flex-end; gap: 12px; padding-bottom: 10px; background: rgba(0,0,0,0.3); }
         .ball-column { display: flex; flex-direction: column-reverse; gap: 5px; width: 42px; align-items: center; min-height: 140px; }
@@ -28,7 +27,7 @@
         .work-slot.locked::after { content: '🔒'; position: absolute; font-size: 18px; opacity: 0.5; }
 
         #bottom-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; overflow: hidden; }
-        .block { width: 62px; height: 62px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-content: center; transition: transform 0.2s, opacity 0.2s; }
+        .block { width: 62px; height: 62px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4); display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; justify-content: center; align-content: center; transition: transform 0.2s; }
         .hole-spot { width: 18px; height: 18px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 3px; }
         .hole-spot.filled { border: none; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
 
@@ -55,8 +54,8 @@
             <span>💰Sess: <span id="session-coins">0</span></span>
             <span>💰Total: <span id="ui-coins">0</span></span>
         </div>
+        <div id="count-bar">残り: <span id="rem-count">0</span></div>
         <div id="ball-area"></div>
-        <div id="count-bar">Blocks Left: <span id="rem-count">0</span></div>
         <div id="mid-area"></div>
         <div id="bottom-area"></div>
         <div style="display:flex; justify-content: center; gap:8px; padding: 10px; background: #1e293b; z-index:20;">
@@ -102,15 +101,15 @@
     <script>
         let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
         let stage = 1, gameActive = false, sessCoins = 0, tempSlots = 0;
-        const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7'];
+        const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7']; // 赤, 青, 緑, 黄, 紫
         let balls = [], blocks = [], midSlots = [], blockQueue = [], totalBallPool = [], stageRem = 0, colCount = 2;
 
         function load() {
-            const saved = localStorage.getItem('ball_matcher_v76');
+            const saved = localStorage.getItem('ball_matcher_v77');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
             updateUI();
         }
-        function save() { localStorage.setItem('ball_matcher_v76', JSON.stringify(userData)); }
+        function save() { localStorage.setItem('ball_matcher_v77', JSON.stringify(userData)); }
 
         function getCurrentUnitValue() { return 10 + userData.vLv; }
 
@@ -157,16 +156,18 @@
         function startGame() {
             stage = userData.sLv; tempSlots = 0; sessCoins = 0;
             colCount = stage >= 16 ? 4 : (stage >= 3 ? 3 : 2);
-            stageRem = (stage <= 2) ? (stage === 1 ? 5 : 10) : (12 + (stage - 3));
             
-            // 色の数をステージに応じて制限（マイルド調整）
-            let colorCount = stage < 5 ? 3 : (stage < 15 ? 4 : 5);
-            let stageColors = colors.slice(0, colorCount);
+            // 修正：ブロック数を「5 + ステージ数」に固定。15ステージなら20個になります。
+            stageRem = 5 + stage;
+            
+            // 修正：紫色の登場をステージ20からに。それまでは4色以下。
+            let colorLimit = stage < 5 ? 3 : (stage < 20 ? 4 : 5);
+            let activeColors = colors.slice(0, colorLimit);
 
             totalBallPool = []; blockQueue = [];
             for(let i=0; i<stageRem; i++){
-                let color = stageColors[Math.floor(Math.random() * stageColors.length)];
-                let size = Math.random() > 0.75 ? 4 : 2; // 4個ブロックを少し減らして調整
+                let color = activeColors[Math.floor(Math.random() * activeColors.length)];
+                let size = Math.random() > 0.8 ? 4 : 2; 
                 blockQueue.push({size: size, c: color});
                 for(let j=0; j<size; j++) totalBallPool.push(color);
             }
@@ -227,6 +228,7 @@
             });
             document.getElementById('ui-stage').innerText = stage;
             document.getElementById('session-coins').innerText = Math.floor(sessCoins);
+            // 「残り」表記に更新
             document.getElementById('rem-count').innerText = stageRem + blocks.length + blockQueue.length;
             checkOver();
         }
