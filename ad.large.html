@@ -8,16 +8,85 @@
             margin: 0;
             padding: 0;
             display: flex;
+            flex-direction: column; /* 広告とボタンを縦に並べる */
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #ffffff; /* 広告の背景を白に */
+            background-color: #ffffff;
             overflow: hidden;
+        }
+
+        /* 広告を囲む枠。i-mobileのサイズに合わせて調整 */
+        .ad-wrapper {
+            width: 300px;
+            height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 閉じるボタンのスタイル */
+        #close-btn {
+            margin-top: 20px;
+            padding: 10px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background: #ccc; /* 最初はグレー */
+            border: none;
+            border-radius: 50px;
+            cursor: not-allowed;
+            transition: 0.3s;
+        }
+
+        /* 5秒経った後の活性化スタイル */
+        #close-btn.active {
+            background: #ff5722; /* 目立つ色に */
+            cursor: pointer;
+            box-shadow: 0 4px #bf360c;
         }
     </style>
 </head>
 <body>
 
-    <script src="https://adm.shinobi.jp/s/1032eae8cb11c685ef9a7bad656b80ee"></script>
-    </body>
+    <div class="ad-wrapper">
+        <div id="im-0a60bffffbcb4ad7a6e134cebc496982">
+            <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"></script>
+            <script>(window.adsbyimobile=window.adsbyimobile||[]).push({pid:84561,mid:590804,asid:1924115,type:"banner",display:"inline",elementid:"im-0a60bffffbcb4ad7a6e134cebc496982"})</script>
+        </div>
+    </div>
+
+    <button id="close-btn" onclick="closeAdWithParent()" disabled>あと 5秒</button>
+
+    <script>
+        let timeLeft = 5;
+        const btn = document.getElementById('close-btn');
+
+        // カウントダウン処理
+        const timer = setInterval(() => {
+            timeLeft--;
+            if (timeLeft > 0) {
+                btn.innerText = `あと ${timeLeft}秒`;
+            } else {
+                clearInterval(timer);
+                btn.innerText = "閉じる ×";
+                btn.disabled = false;
+                btn.classList.add('active');
+            }
+        }, 1000);
+
+        // 親画面（index.html）の広告を閉じる関数を呼び出す
+        function closeAdWithParent() {
+            if (timeLeft <= 0) {
+                // 親ウィンドウの関数を実行
+                if (parent && parent.closeAd) {
+                    parent.closeAd();
+                } else {
+                    // 予備の処理（親のDOMを直接操作）
+                    parent.document.getElementById('ad-large-container').style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
 </html>
