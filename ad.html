@@ -3,61 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            background: #333; 
-            height: 100vh;
-        }
+        body { margin: 0; padding: 0; overflow: hidden; background: transparent; }
+        .ad-container { display: flex; justify-content: center; align-items: center; height: 100vh; }
     </style>
 </head>
 <body>
-
-    <div id="ad-container">
+    <div class="ad-container" id="ad-box">
         </div>
 
     <script>
-        // URLの ?pos=top か ?pos=bottom を判定する
-        const params = new URLSearchParams(window.location.search);
-        const position = params.get('pos');
-        const container = document.getElementById('ad-container');
+        // URLのパラメータ (?pos=top など) を取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const pos = urlParams.get('pos');
+        const adBox = document.getElementById('ad-box');
 
-        if (position === 'top') {
-            // --- 上部用広告タグ ---
-            container.innerHTML = `
-                <div id="im-58d678f1735a48a1807be7caa862ac16">
-                    <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"><\/script>
-                    <script>
-                        (window.adsbyimobile=window.adsbyimobile||[]).push({
-                            pid:84561, mid:590804, asid:1924119, 
-                            type:"banner", display:"inline", 
-                            elementid:"im-58d678f1735a48a1807be7caa862ac16"
-                        });
-                    <\/script>
-                </div>`;
+        // i-mobileの情報を設定
+        let asid = "";
+        let divId = "";
+
+        if (pos === 'top') {
+            asid = "1924119"; // 上用
+            divId = "im-top-ad";
         } else {
-            // --- 下部用広告タグ (デフォルトは下) ---
-            container.innerHTML = `
-                <div id="im-dc7dd2038ec343c9994689c43ca5ddfa">
-                    <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"><\/script>
-                    <script>
-                        (window.adsbyimobile=window.adsbyimobile||[]).push({
-                            pid:84561, mid:590804, asid:1924120, 
-                            type:"banner", display:"inline", 
-                            elementid:"im-dc7dd2038ec343c9994689c43ca5ddfa"
-                        });
-                    <\/script>
-                </div>`;
+            asid = "1924120"; // 下用
+            divId = "im-bottom-ad";
         }
 
-        // 30秒後に自分自身をリロードして広告を更新する
-        setTimeout(() => {
-            location.reload();
-        }, 30000);
+        // 広告枠を作成して流し込む
+        adBox.innerHTML = `<div id="${divId}"></div>`;
+
+        // i-mobileのスクリプトを動的に読み込む
+        window.adsbyimobile = window.adsbyimobile || [];
+        window.adsbyimobile.push({
+            pid: 84561,
+            mid: 590804,
+            asid: asid,
+            type: "banner",
+            display: "inline",
+            elementid: divId
+        });
+
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = "https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104";
+        document.body.appendChild(script);
     </script>
 </body>
 </html>
