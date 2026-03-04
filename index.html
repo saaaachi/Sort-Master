@@ -117,13 +117,6 @@
         const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7']; 
         let balls = [], blocks = [], midSlots = [], blockQueue = [], totalBallPool = [], stageTotalCount = 0, colCount = 2;
 
-        // --- 広告30秒リフレッシュ ---
-        setInterval(() => {
-            const now = Date.now();
-            document.getElementById('ifr-top').src = 'ad.html?pos=top&t=' + now;
-            document.getElementById('ifr-bottom').src = 'ad.html?pos=bottom&t=' + now;
-        }, 30000);
-
         function load() {
             const saved = localStorage.getItem('ball_matcher_v80');
             if(saved) userData = {...userData, ...JSON.parse(saved)};
