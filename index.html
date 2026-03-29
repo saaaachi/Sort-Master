@@ -9,17 +9,14 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { background: #0f172a; font-family: sans-serif; overflow: hidden; color: white; position: fixed; width: 100%; height: 100%; }
         
-        /* 上部広告エリア：100px固定 */
+        /* 上部広告：100px固定 */
         #ad-top-container { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100px; 
-            background: #222; z-index: 9999; overflow: hidden; 
+            background: #000; z-index: 9999; overflow: hidden; 
             display: flex; justify-content: center; align-items: center;
-            border-bottom: 1px solid #444;
         }
 
-        /* ゲーム外枠：上100px、下は0（最大化） */
         #game-outer { position: absolute; top: 100px; bottom: 0; left: 0; right: 0; background: #1e293b; display: flex; flex-direction: column; z-index: 10; }
-        
         #stat-bar { height: 35px; background: #000; display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: #facc15; }
         #count-bar { height: 25px; background: #1e293b; display: flex; justify-content: center; align-items: center; font-size: 13px; color: #facc15; border-bottom: 1px solid #334155; font-weight: bold; }
         #ball-area { height: 155px; display: flex; justify-content: center; align-items: flex-end; gap: 12px; padding-bottom: 10px; background: rgba(0,0,0,0.3); }
@@ -42,17 +39,23 @@
         
         /* リザルト画面 */
         #result-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.98); z-index: 5000; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 110px; overflow-y: auto; }
-        .res-box { background: #1e293b; padding: 20px; border-radius: 20px; border: 2px solid #facc15; width: 90%; text-align: center; }
+        .res-box { background: #1e293b; padding: 15px; border-radius: 20px; border: 2px solid #facc15; width: 90%; text-align: center; }
         
-        /* AdSense用スクエア広告枠 */
-        #mid-ad-box { margin: 15px auto; min-height: 250px; display: flex; justify-content: center; align-items: center; background: #000; width: 300px; overflow: hidden; }
+        /* ★修正：広告枠を透明にし、中身がある時だけ高さを確保 */
+        #mid-ad-box { margin: 10px auto; min-height: 250px; display: flex; justify-content: center; align-items: center; background: transparent; width: 300px; }
         
-        .ok-btn { margin-top:15px; padding:15px 60px; border-radius:30px; border:none; background:#3b82f6; color:white; font-weight:bold; cursor:pointer; font-size: 18px; width: 80%; transition: opacity 0.3s; }
-        .ok-btn:disabled { background: #475569; opacity: 0.6; cursor: default; }
+        .ok-btn { margin-top:10px; padding:15px; border-radius:30px; border:none; background:#3b82f6; color:white; font-weight:bold; cursor:pointer; font-size: 18px; width: 80%; }
+        .ok-btn:disabled { background: #475569; opacity: 0.6; }
 
-        /* 全画面広告用オーバーレイ */
-        #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 99999; align-items: center; justify-content: center; }
-        .inter-content { width: 95%; height: 85%; background: #fff; border-radius: 15px; position: relative; }
+        /* ★修正：大広告（全画面）のオーバーレイと閉じるボタン */
+        #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; align-items: center; justify-content: center; }
+        .inter-content { width: 300px; height: 250px; background: #fff; position: relative; border-radius: 8px; }
+        #close-ad-btn { 
+            position: absolute; top: -45px; right: -10px; width: 40px; height: 40px; 
+            background: #333; color: white; border-radius: 50%; display: flex; 
+            align-items: center; justify-content: center; font-size: 20px; 
+            font-weight: bold; border: 2px solid #fff; cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -65,15 +68,9 @@
     </div>
 
     <div id="game-outer">
-        <div id="stat-bar">
-            <span>Stage: <span id="ui-stage">1</span></span>
-            <span>💰Sess: <span id="session-coins">0</span></span>
-            <span>💰Total: <span id="ui-coins">0</span></span>
-        </div>
+        <div id="stat-bar"><span>Stage: <span id="ui-stage">1</span></span><span>💰Sess: <span id="session-coins">0</span></span><span>💰Total: <span id="ui-coins">0</span></span></div>
         <div id="count-bar">残り: <span id="rem-count">0</span></div>
-        <div id="ball-area"></div>
-        <div id="mid-area"></div>
-        <div id="bottom-area"></div>
+        <div id="ball-area"></div><div id="mid-area"></div><div id="bottom-area"></div>
         <div style="display:flex; justify-content: center; gap:8px; padding: 10px; background: #1e293b; z-index:20;">
             <button onclick="useItem('ball')" style="background:#475569; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:11px;">上🔀(<span id="count-sh-b">0</span>)</button>
             <button onclick="useItem('block')" style="background:#475569; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:11px;">下🔀(<span id="count-sh-bl">0</span>)</button>
@@ -84,26 +81,20 @@
     <div id="menuScreen" class="overlay">
         <h2 style="color:#facc15; margin-bottom:5px;">Ball Matcher EX</h2>
         <div style="font-size:22px; margin-bottom:10px;">💰 <span id="shop-coins">0</span></div>
-        <div class="shop-card">
-            <div>💎 単価 Lv.<span id="lv-v">0</span> (<span id="cur-v">10</span>円)</div>
-            <button class="buy-btn" onclick="buy('value')">💰 <span id="cost-v">0</span></button>
-        </div>
+        <div class="shop-card"><div>💎 単価 Lv.<span id="lv-v">0</span> (<span id="cur-v">10</span>円)</div><button class="buy-btn" onclick="buy('value')">💰 <span id="cost-v">0</span></button></div>
         <div id="adv-shop" style="display:none; width:100%;">
             <div class="shop-card"><div>➕ 永続枠追加 (<span id="lv-slot">0</span>/2)</div><button class="buy-btn" onclick="buy('slot')">💰 <span id="cost-slot">0</span></button></div>
             <div class="shop-card"><div>🔀 上段シャッフル</div><button class="buy-btn" onclick="buy('sh-b')">💰 500</button></div>
             <div class="shop-card"><div>🔀 下段シャッフル</div><button class="buy-btn" onclick="buy('sh-bl')">💰 1000</button></div>
         </div>
         <button id="start-btn" onclick="startGame()">START</button>
-        <div style="margin-top: 25px; text-align: center;">
-            <a href="https://saaaachi.github.io/" style="color: #3b82f6; text-decoration: none; font-size: 14px; font-weight: bold;">★ 他のゲームはこちら ★</a>
-        </div>
+        <div style="margin-top: 20px;"><a href="https://saaaachi.github.io/" style="color: #3b82f6; text-decoration: none; font-size: 14px;">★ 他のゲームはこちら ★</a></div>
     </div>
 
     <div id="result-screen">
         <div class="res-box">
             <h1 id="res-title" style="color:#facc15; font-size: 24px;">CLEAR!</h1>
             <p style="font-size:18px; margin-top:5px;">獲得: 💰<span id="res-coins">0</span></p>
-            
             <div id="mid-ad-box">
                 <ins class="adsbygoogle"
                      style="display:block"
@@ -113,18 +104,19 @@
                      data-full-width-responsive="true"></ins>
                 <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
             </div>
-
             <button id="res-ok-btn" onclick="handleResultOK()" class="ok-btn" disabled>お待ちください...</button>
         </div>
     </div>
 
     <div id="inter-screen">
         <div class="inter-content">
-            <iframe id="ifr-inter" src="about:blank" style="width:100%; height:100%; border:none; border-radius:15px;"></iframe>
+            <div id="close-ad-btn" onclick="closeAd()">5</div>
+            <iframe id="ifr-inter" src="about:blank" style="width:100%; height:100%; border:none; border-radius:8px;"></iframe>
         </div>
     </div>
 
     <script>
+        // ロジック部分は引き継ぎ
         let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
         let stage = 1, gameActive = false, sessCoins = 0, tempSlots = 0;
         const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7']; 
@@ -137,7 +129,6 @@
         }
         function save() { localStorage.setItem('ball_matcher_v80', JSON.stringify(userData)); }
         function getCurrentUnitValue() { return 10 + userData.vLv; }
-
         function getCost() {
             let lv = userData.vLv;
             if (lv === 0) return 10;
@@ -153,7 +144,6 @@
             }
             return cost;
         }
-
         function updateUI() {
             document.getElementById('shop-coins').innerText = Math.floor(userData.coins);
             document.getElementById('ui-coins').innerText = Math.floor(userData.coins);
@@ -166,142 +156,66 @@
             document.getElementById('count-sh-b').innerText = userData.shB;
             document.getElementById('count-sh-bl').innerText = userData.shBl;
         }
-
         function buy(type) {
             let cost = (type==='value')?getCost():(type==='slot'?(userData.slotLv===0?3000:30000):(type==='sh-b'?500:1000));
-            if(userData.coins >= cost) {
-                userData.coins -= cost;
-                if(type==='value') userData.vLv++;
-                if(type==='slot') userData.slotLv++;
-                if(type==='sh-b') userData.shB++; if(type==='sh-bl') userData.shBl++;
-                save(); updateUI();
-            }
+            if(userData.coins >= cost) { userData.coins -= cost; if(type==='value') userData.vLv++; if(type==='slot') userData.slotLv++; if(type==='sh-b') userData.shB++; if(type==='sh-bl') userData.shBl++; save(); updateUI(); }
         }
-
         function startGame() {
-            stage = userData.sLv; tempSlots = 0; sessCoins = 0;
-            colCount = stage >= 16 ? 4 : (stage >= 3 ? 3 : 2);
-            stageTotalCount = 5 + (stage - 1);
-            let colorLimit = stage < 5 ? 3 : (stage < 20 ? 4 : 5);
-            let activeColors = colors.slice(0, colorLimit);
+            stage = userData.sLv; tempSlots = 0; sessCoins = 0; colCount = stage >= 16 ? 4 : (stage >= 3 ? 3 : 2); stageTotalCount = 5 + (stage - 1);
+            let colorLimit = stage < 5 ? 3 : (stage < 20 ? 4 : 5); let activeColors = colors.slice(0, colorLimit);
             totalBallPool = []; blockQueue = []; midSlots = []; blocks = [];
             for(let i=0; i<stageTotalCount; i++){
                 let color = activeColors[Math.floor(Math.random() * activeColors.length)];
-                let size = Math.random() > 0.85 ? 4 : 2; 
-                blockQueue.push({size: size, c: color});
-                for(let j=0; j<size; j++) totalBallPool.push(color);
+                let size = Math.random() > 0.85 ? 4 : 2; blockQueue.push({size: size, c: color}); for(let j=0; j<size; j++) totalBallPool.push(color);
             }
-            totalBallPool.sort(() => Math.random() - 0.5);
-            document.getElementById('menuScreen').style.display = 'none';
-            init(); gameActive = true;
+            totalBallPool.sort(() => Math.random() - 0.5); document.getElementById('menuScreen').style.display = 'none'; init(); gameActive = true;
         }
-
         function init() {
             document.getElementById('ball-area').innerHTML = ""; balls = [];
             for(let i=0; i<colCount; i++){
-                let c = document.createElement('div'); c.className="ball-column"; c.id=`col-${i}`; 
-                document.getElementById('ball-area').appendChild(c);
+                let c = document.createElement('div'); c.className="ball-column"; c.id=`col-${i}`; document.getElementById('ball-area').appendChild(c);
                 balls[i] = []; for(let j=0; j<4; j++) addBall(i);
             }
-            buildSlots(true);
-            blocks = []; for(let i=0; i<4; i++) { if(blockQueue.length > 0) blocks.push(blockQueue.shift()); }
-            render();
+            buildSlots(true); blocks = []; for(let i=0; i<4; i++) { if(blockQueue.length > 0) blocks.push(blockQueue.shift()); } render();
         }
-
         function buildSlots(isNewGame = false) {
-            const mid = document.getElementById('mid-area'); 
-            const oldData = isNewGame ? [] : midSlots.map(s => ({block: s.block, filled: s.filled}));
-            mid.innerHTML = ""; midSlots = [];
-            let totalActive = 4 + userData.slotLv + tempSlots;
+            const mid = document.getElementById('mid-area'); const oldData = isNewGame ? [] : midSlots.map(s => ({block: s.block, filled: s.filled}));
+            mid.innerHTML = ""; midSlots = []; let totalActive = 4 + userData.slotLv + tempSlots;
             for(let i=0; i<7; i++){
-                let s = document.createElement('div'); 
-                s.className = "work-slot" + (i >= totalActive ? " locked" : "");
-                mid.appendChild(s); 
-                let slotObj = {el:s, block:null, filled:0};
-                if(i < totalActive) {
-                    if(!isNewGame && oldData[i]) { slotObj.block = oldData[i].block; slotObj.filled = oldData[i].filled; }
-                    midSlots.push(slotObj); drawSlot(slotObj);
-                }
+                let s = document.createElement('div'); s.className = "work-slot" + (i >= totalActive ? " locked" : ""); mid.appendChild(s); 
+                let slotObj = {el:s, block:null, filled:0}; if(i < totalActive) { if(!isNewGame && oldData[i]) { slotObj.block = oldData[i].block; slotObj.filled = oldData[i].filled; } midSlots.push(slotObj); drawSlot(slotObj); }
             }
         }
-
-        function buyTempSlot() {
-            if(userData.coins >= 1000 && 4+userData.slotLv+tempSlots < 7) {
-                userData.coins -= 1000; tempSlots++; 
-                buildSlots(false); render(); updateUI();
-            }
-        }
-
+        function buyTempSlot() { if(userData.coins >= 1000 && 4+userData.slotLv+tempSlots < 7) { userData.coins -= 1000; tempSlots++; buildSlots(false); render(); updateUI(); } }
         function addBall(i) { if(totalBallPool.length > 0) balls[i].push({c: totalBallPool.shift()}); }
-
         function render() {
             for(let i=0; i<colCount; i++){
                 let el = document.getElementById(`col-${i}`); el.innerHTML = "";
-                balls[i].forEach((b, idx) => {
-                    let d = document.createElement('div'); d.className = "ball"; d.style.background = b.c; 
-                    if(idx===0) d.onclick = () => selectBall(i); el.appendChild(d);
-                });
+                balls[i].forEach((b, idx) => { let d = document.createElement('div'); d.className = "ball"; d.style.background = b.c; if(idx===0) d.onclick = () => selectBall(i); el.appendChild(d); });
             }
             const bArea = document.getElementById('bottom-area'); bArea.innerHTML = "";
             blocks.forEach((bl, idx) => {
                 let el = document.createElement('div'); el.className = `block`; el.style.borderColor = bl.c;
-                for(let j=0; j<4; j++){
-                    let h = document.createElement('div'); h.className="hole-spot"; 
-                    if(j >= bl.size) h.style.visibility = "hidden"; else h.style.borderColor=bl.c; 
-                    el.appendChild(h);
-                }
-                el.onclick = () => selectBlock(bl, idx);
-                bArea.appendChild(el);
+                for(let j=0; j<4; j++){ let h = document.createElement('div'); h.className="hole-spot"; if(j >= bl.size) h.style.visibility = "hidden"; else h.style.borderColor=bl.c; el.appendChild(h); }
+                el.onclick = () => selectBlock(bl, idx); bArea.appendChild(el);
             });
-            document.getElementById('ui-stage').innerText = stage;
-            document.getElementById('session-coins').innerText = Math.floor(sessCoins);
-            document.getElementById('rem-count').innerText = stageTotalCount;
-            checkOver();
+            document.getElementById('ui-stage').innerText = stage; document.getElementById('session-coins').innerText = Math.floor(sessCoins); document.getElementById('rem-count').innerText = stageTotalCount; checkOver();
         }
-
-        function selectBlock(bl, idx) {
-            let slot = midSlots.find(s=>!s.block); if(!slot) return;
-            slot.block = bl; drawSlot(slot);
-            blocks.splice(idx, 1);
-            if(blockQueue.length > 0) blocks.push(blockQueue.shift());
-            render();
-        }
-
-        function drawSlot(s) {
-            s.el.innerHTML = ""; if(!s.block) return;
-            s.el.style.borderColor = s.block.c;
-            for(let i=0; i<s.block.size; i++){
-                let h = document.createElement('div'); h.className="hole-spot"+(i<s.filled?" filled":"");
-                if(i<s.filled) h.style.background=s.block.c; s.el.appendChild(h);
-            }
-        }
-
+        function selectBlock(bl, idx) { let slot = midSlots.find(s=>!s.block); if(!slot) return; slot.block = bl; drawSlot(slot); blocks.splice(idx, 1); if(blockQueue.length > 0) blocks.push(blockQueue.shift()); render(); }
+        function drawSlot(s) { s.el.innerHTML = ""; if(!s.block) return; s.el.style.borderColor = s.block.c; for(let i=0; i<s.block.size; i++){ let h = document.createElement('div'); h.className="hole-spot"+(i<s.filled?" filled":""); if(i<s.filled) h.style.background=s.block.c; s.el.appendChild(h); } }
         function selectBall(i) {
-            if(balls[i].length === 0) return;
-            let color = balls[i][0].c;
-            let slot = midSlots.find(s => s.block && s.block.c === color && s.filled < s.block.size);
+            if(balls[i].length === 0) return; let color = balls[i][0].c; let slot = midSlots.find(s => s.block && s.block.c === color && s.filled < s.block.size);
             if(slot) {
-                balls[i].shift(); addBall(i);
-                slot.filled++; drawSlot(slot);
+                balls[i].shift(); addBall(i); slot.filled++; drawSlot(slot);
                 if(slot.filled === slot.block.size) {
-                    let base = getCurrentUnitValue();
-                    sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base);
-                    setTimeout(() => {
-                        slot.block = null; slot.filled = 0; drawSlot(slot); 
-                        stageTotalCount--; 
-                        if(stageTotalCount <= 0){ userData.sLv++; showResult(true); }
-                        render();
-                    }, 100);
+                    let base = getCurrentUnitValue(); sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base);
+                    setTimeout(() => { slot.block = null; slot.filled = 0; drawSlot(slot); stageTotalCount--; if(stageTotalCount <= 0){ userData.sLv++; showResult(true); } render(); }, 100);
                 } else { render(); }
             }
         }
+        function checkOver() { if(gameActive && midSlots.every(s=>s.block)) { if(!midSlots.some(s => balls.some(c => c.length > 0 && c[0].c === s.block.c))) showResult(false); } }
 
-        function checkOver() {
-            if(gameActive && midSlots.every(s=>s.block)) {
-                if(!midSlots.some(s => balls.some(c => c.length > 0 && c[0].c === s.block.c))) showResult(false);
-            }
-        }
-
+        // --- ゲーム終了処理 ---
         function showResult(isClear) {
             gameActive = false;
             let finalCoins = Math.floor(sessCoins * (isClear ? 1.0 : 0.6));
@@ -311,27 +225,17 @@
 
             document.getElementById('res-title').innerText = isClear ? "STAGE CLEAR!" : "GAME OVER";
             document.getElementById('res-coins').innerText = finalCoins;
-            
             const okBtn = document.getElementById('res-ok-btn');
-            okBtn.disabled = true;
-            okBtn.innerText = "お待ちください...";
-            
+            okBtn.disabled = true; okBtn.innerText = "お待ちください...";
             document.getElementById('result-screen').style.display = 'flex';
-
-            setTimeout(() => {
-                okBtn.disabled = false;
-                okBtn.innerText = "OK";
-            }, 1500);
+            setTimeout(() => { okBtn.disabled = false; okBtn.innerText = "OK"; }, 1500);
         }
 
         function handleResultOK() {
             document.getElementById('result-screen').style.display = 'none';
-            
-            // 広告出現ロジック：初回2回目、以降3回おき（5, 8, 11...）
+            // 2回目、5回目、8回目...のタイミング
             const count = userData.playCount;
-            const shouldShowAd = (count === 2 || (count >= 5 && (count - 2) % 3 === 0));
-
-            if (shouldShowAd) {
+            if (count === 2 || (count >= 5 && (count - 2) % 3 === 0)) {
                 showLargeAd();
             } else {
                 document.getElementById('menuScreen').style.display = 'flex';
@@ -339,22 +243,38 @@
             updateUI();
         }
 
+        // --- 大広告（インタースティシャル風）の制御 ---
         function showLargeAd() {
-            document.getElementById('inter-screen').style.display = 'flex';
-            document.getElementById('ifr-inter').src = 'ad.large.html?t=' + Date.now();
+            const screen = document.getElementById('inter-screen');
+            const closeBtn = document.getElementById('close-ad-btn');
+            const ifr = document.getElementById('ifr-inter');
+            
+            ifr.src = 'ad.large.html?t=' + Date.now();
+            screen.style.display = 'flex';
+            
+            // 5秒カウントダウン
+            let timer = 5;
+            closeBtn.innerText = timer;
+            closeBtn.style.pointerEvents = "none"; // 0秒まで押せなくする
+            
+            const countdown = setInterval(() => {
+                timer--;
+                closeBtn.innerText = timer;
+                if (timer <= 0) {
+                    clearInterval(countdown);
+                    closeBtn.innerText = "×";
+                    closeBtn.style.pointerEvents = "auto";
+                }
+            }, 1000);
         }
 
         function closeAd() {
             document.getElementById('inter-screen').style.display = 'none';
+            document.getElementById('ifr-inter').src = 'about:blank';
             document.getElementById('menuScreen').style.display = 'flex';
         }
 
-        function useItem(type) {
-            if(type==='ball' && userData.shB > 0){ userData.shB--; balls.forEach(c=>c.sort(()=>Math.random()-0.5)); }
-            if(type==='block' && userData.shBl > 0){ userData.shBl--; blocks.sort(()=>Math.random()-0.5); }
-            save(); render(); updateUI();
-        }
-
+        function useItem(type) { if(type==='ball' && userData.shB > 0){ userData.shB--; balls.forEach(c=>c.sort(()=>Math.random()-0.5)); } if(type==='block' && userData.shBl > 0){ userData.shBl--; blocks.sort(()=>Math.random()-0.5); } save(); render(); updateUI(); }
         window.onload = load;
     </script>
 </body>
