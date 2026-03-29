@@ -10,11 +10,7 @@
         body { background: #0f172a; font-family: sans-serif; overflow: hidden; color: white; position: fixed; width: 100%; height: 100%; }
         
         /* 上部広告：100px固定 */
-        #ad-top-container { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100px; 
-            background: #000; z-index: 9999; overflow: hidden; 
-            display: flex; justify-content: center; align-items: center;
-        }
+        #ad-top-container { position: fixed; top: 0; left: 0; width: 100%; height: 100px; background: #000; z-index: 9999; overflow: hidden; display: flex; justify-content: center; align-items: center; }
 
         #game-outer { position: absolute; top: 100px; bottom: 0; left: 0; right: 0; background: #1e293b; display: flex; flex-direction: column; z-index: 10; }
         #stat-bar { height: 35px; background: #000; display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: #facc15; }
@@ -37,33 +33,24 @@
         .buy-btn { background: #facc15; color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 13px; }
         #start-btn { margin-top: 15px; width: 100%; min-height: 60px; border-radius: 30px; border: none; background: #22c55e; color: white; font-size: 20px; font-weight: bold; flex-shrink: 0; }
         
-        /* リザルト画面 */
-        #result-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.98); z-index: 5000; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 110px; overflow-y: auto; }
-        .res-box { background: #1e293b; padding: 15px; border-radius: 20px; border: 2px solid #facc15; width: 90%; text-align: center; }
+        /* リザルト画面：中身を詰める修正 */
+        #result-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.98); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .res-box { background: #1e293b; padding: 25px 15px; border-radius: 20px; border: 2px solid #facc15; width: 95%; max-width: 400px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
         
-        /* ★修正：広告枠を透明にし、中身がある時だけ高さを確保 */
-        #mid-ad-box { margin: 10px auto; min-height: 250px; display: flex; justify-content: center; align-items: center; background: transparent; width: 300px; }
+        /* スクエア枠：デフォルトは非表示 */
+        #mid-ad-box { display: none; width: 330px; height: 330px; background: #000; justify-content: center; align-items: center; border-radius: 10px; overflow: hidden; margin: 5px 0; }
         
-        .ok-btn { margin-top:10px; padding:15px; border-radius:30px; border:none; background:#3b82f6; color:white; font-weight:bold; cursor:pointer; font-size: 18px; width: 80%; }
-        .ok-btn:disabled { background: #475569; opacity: 0.6; }
+        .ok-btn { padding: 15px; border-radius: 30px; border: none; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; font-size: 18px; width: 85%; }
 
-        /* ★修正：大広告（全画面）のオーバーレイと閉じるボタン */
+        /* 全画面広告（5秒カウント） */
         #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; align-items: center; justify-content: center; }
-        .inter-content { width: 300px; height: 250px; background: #fff; position: relative; border-radius: 8px; }
-        #close-ad-btn { 
-            position: absolute; top: -45px; right: -10px; width: 40px; height: 40px; 
-            background: #333; color: white; border-radius: 50%; display: flex; 
-            align-items: center; justify-content: center; font-size: 20px; 
-            font-weight: bold; border: 2px solid #fff; cursor: pointer;
-        }
+        .inter-content { width: 330px; height: 330px; background: #fff; position: relative; border-radius: 8px; }
+        #close-ad-btn { position: absolute; top: -50px; right: 0px; width: 45px; height: 45px; background: #333; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; border: 2px solid #fff; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="ad-top-container">
-        <ins class="adsbygoogle"
-             style="display:inline-block;width:320px;height:100px"
-             data-ad-client="ca-pub-1299640300068792"
-             data-ad-slot="3972022911"></ins>
+        <ins class="adsbygoogle" style="display:inline-block;width:320px;height:100px" data-ad-client="ca-pub-1299640300068792" data-ad-slot="3972022911"></ins>
         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 
@@ -88,73 +75,53 @@
             <div class="shop-card"><div>🔀 下段シャッフル</div><button class="buy-btn" onclick="buy('sh-bl')">💰 1000</button></div>
         </div>
         <button id="start-btn" onclick="startGame()">START</button>
-        <div style="margin-top: 20px;"><a href="https://saaaachi.github.io/" style="color: #3b82f6; text-decoration: none; font-size: 14px;">★ 他のゲームはこちら ★</a></div>
+        <div style="margin-top: 20px;"><a href="https://saaaachi.github.io/" style="color: #3b82f6; text-decoration: none; font-size: 15px; font-weight:bold;">★ 他のゲームはこちら ★</a></div>
     </div>
 
     <div id="result-screen">
         <div class="res-box">
-            <h1 id="res-title" style="color:#facc15; font-size: 24px;">CLEAR!</h1>
-            <p style="font-size:18px; margin-top:5px;">獲得: 💰<span id="res-coins">0</span></p>
+            <h1 id="res-title" style="color:#facc15; font-size: 26px;">CLEAR!</h1>
+            <p style="font-size:20px;">獲得: 💰<span id="res-coins">0</span></p>
+            
             <div id="mid-ad-box">
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-1299640300068792"
-                     data-ad-slot="5468201326"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-            </div>
-            <button id="res-ok-btn" onclick="handleResultOK()" class="ok-btn" disabled>お待ちください...</button>
+                </div>
+
+            <button id="res-ok-btn" onclick="handleResultOK()" class="ok-btn">OK</button>
+            <a href="https://saaaachi.github.io/" style="color: #3b82f6; text-decoration: none; font-size: 14px;">他のゲームを遊ぶ</a>
         </div>
     </div>
 
     <div id="inter-screen">
         <div class="inter-content">
             <div id="close-ad-btn" onclick="closeAd()">5</div>
-            <iframe id="ifr-inter" src="about:blank" style="width:100%; height:100%; border:none; border-radius:8px;"></iframe>
+            <iframe id="ifr-inter" src="about:blank" style="width:100%; height:100%; border:none; border-radius:8px; background: #fff;"></iframe>
         </div>
     </div>
 
     <script>
-        // ロジック部分は引き継ぎ
         let userData = { coins: 0, vLv: 0, slotLv: 0, sLv: 1, shB: 0, shBl: 0, playCount: 0 };
         let stage = 1, gameActive = false, sessCoins = 0, tempSlots = 0;
         const colors = ['#ef4444', '#3b82f6', '#22c55e', '#facc15', '#a855f7']; 
         let balls = [], blocks = [], midSlots = [], blockQueue = [], totalBallPool = [], stageTotalCount = 0, colCount = 2;
 
-        function load() {
-            const saved = localStorage.getItem('ball_matcher_v80');
-            if(saved) userData = {...userData, ...JSON.parse(saved)};
-            updateUI();
-        }
+        function load() { const saved = localStorage.getItem('ball_matcher_v80'); if(saved) userData = {...userData, ...JSON.parse(saved)}; updateUI(); }
         function save() { localStorage.setItem('ball_matcher_v80', JSON.stringify(userData)); }
-        function getCurrentUnitValue() { return 10 + userData.vLv; }
-        function getCost() {
-            let lv = userData.vLv;
-            if (lv === 0) return 10;
-            if (lv === 1) return 80;
-            let cost = 80;
-            for (let i = 2; i <= lv; i++) {
-                let unit = 10 + (i - 1);
-                if (unit >= 12 && unit <= 15) cost = Math.ceil(cost * 1.75 / 10) * 10;
-                else if (unit >= 16 && unit <= 20) cost = Math.ceil(cost * 1.2 / 10) * 10;
-                else if (unit >= 21 && unit <= 35) cost += 500;
-                else if (unit >= 36 && unit <= 50) cost += 800;
-                else if (unit >= 51) cost += 1000;
-            }
-            return cost;
-        }
         function updateUI() {
             document.getElementById('shop-coins').innerText = Math.floor(userData.coins);
             document.getElementById('ui-coins').innerText = Math.floor(userData.coins);
             document.getElementById('lv-v').innerText = userData.vLv;
-            document.getElementById('cur-v').innerText = getCurrentUnitValue();
+            document.getElementById('cur-v').innerText = 10 + userData.vLv;
             document.getElementById('cost-v').innerText = getCost();
             document.getElementById('adv-shop').style.display = userData.vLv >= 5 ? 'block' : 'none';
             document.getElementById('lv-slot').innerText = userData.slotLv;
             document.getElementById('cost-slot').innerText = userData.slotLv === 0 ? 3000 : 30000;
             document.getElementById('count-sh-b').innerText = userData.shB;
             document.getElementById('count-sh-bl').innerText = userData.shBl;
+        }
+        function getCost() {
+            let lv = userData.vLv; if (lv === 0) return 10; if (lv === 1) return 80;
+            let cost = 80; for (let i = 2; i <= lv; i++) { let unit = 10 + (i - 1); if (unit >= 12 && unit <= 15) cost = Math.ceil(cost * 1.75 / 10) * 10; else if (unit >= 16 && unit <= 20) cost = Math.ceil(cost * 1.2 / 10) * 10; else if (unit >= 21 && unit <= 35) cost += 500; else if (unit >= 36 && unit <= 50) cost += 800; else if (unit >= 51) cost += 1000; }
+            return cost;
         }
         function buy(type) {
             let cost = (type==='value')?getCost():(type==='slot'?(userData.slotLv===0?3000:30000):(type==='sh-b'?500:1000));
@@ -208,14 +175,14 @@
             if(slot) {
                 balls[i].shift(); addBall(i); slot.filled++; drawSlot(slot);
                 if(slot.filled === slot.block.size) {
-                    let base = getCurrentUnitValue(); sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base);
+                    let base = 10 + userData.vLv; sessCoins += (slot.block.size===4 ? Math.ceil(base*1.5) : base);
                     setTimeout(() => { slot.block = null; slot.filled = 0; drawSlot(slot); stageTotalCount--; if(stageTotalCount <= 0){ userData.sLv++; showResult(true); } render(); }, 100);
                 } else { render(); }
             }
         }
         function checkOver() { if(gameActive && midSlots.every(s=>s.block)) { if(!midSlots.some(s => balls.some(c => c.length > 0 && c[0].c === s.block.c))) showResult(false); } }
 
-        // --- ゲーム終了処理 ---
+        // --- ゲーム終了 ---
         function showResult(isClear) {
             gameActive = false;
             let finalCoins = Math.floor(sessCoins * (isClear ? 1.0 : 0.6));
@@ -225,44 +192,43 @@
 
             document.getElementById('res-title').innerText = isClear ? "STAGE CLEAR!" : "GAME OVER";
             document.getElementById('res-coins').innerText = finalCoins;
-            const okBtn = document.getElementById('res-ok-btn');
-            okBtn.disabled = true; okBtn.innerText = "お待ちください...";
             document.getElementById('result-screen').style.display = 'flex';
-            setTimeout(() => { okBtn.disabled = false; okBtn.innerText = "OK"; }, 1500);
+            // 広告なし画面なので、OKボタンは最初から有効（disabledにしない）
         }
 
         function handleResultOK() {
-            document.getElementById('result-screen').style.display = 'none';
-            // 2回目、5回目、8回目...のタイミング
             const count = userData.playCount;
+            // 2回目、5回目、8回目...のタイミングで広告表示
             if (count === 2 || (count >= 5 && (count - 2) % 3 === 0)) {
                 showLargeAd();
             } else {
+                document.getElementById('result-screen').style.display = 'none';
                 document.getElementById('menuScreen').style.display = 'flex';
             }
             updateUI();
         }
 
-        // --- 大広告（インタースティシャル風）の制御 ---
         function showLargeAd() {
             const screen = document.getElementById('inter-screen');
             const closeBtn = document.getElementById('close-ad-btn');
             const ifr = document.getElementById('ifr-inter');
             
-            ifr.src = 'ad.large.html?t=' + Date.now();
+            ifr.src = 'ad.large.html?v=' + Date.now();
             screen.style.display = 'flex';
             
-            // 5秒カウントダウン
             let timer = 5;
             closeBtn.innerText = timer;
-            closeBtn.style.pointerEvents = "none"; // 0秒まで押せなくする
+            closeBtn.style.pointerEvents = "none";
+            closeBtn.style.background = "#555";
             
             const countdown = setInterval(() => {
                 timer--;
-                closeBtn.innerText = timer;
-                if (timer <= 0) {
+                if (timer > 0) {
+                    closeBtn.innerText = timer;
+                } else {
                     clearInterval(countdown);
                     closeBtn.innerText = "×";
+                    closeBtn.style.background = "#ff4444";
                     closeBtn.style.pointerEvents = "auto";
                 }
             }, 1000);
@@ -270,6 +236,7 @@
 
         function closeAd() {
             document.getElementById('inter-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'none';
             document.getElementById('ifr-inter').src = 'about:blank';
             document.getElementById('menuScreen').style.display = 'flex';
         }
